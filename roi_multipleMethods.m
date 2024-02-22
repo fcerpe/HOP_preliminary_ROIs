@@ -1,4 +1,4 @@
-%% Trial: create ROIs in different ways
+%% Main script to create ROIs in different ways, for comparison
 %
 % To settle a debate between Hans and Olivier: which ROI definition method
 % should we use?
@@ -15,14 +15,15 @@
 % 4) expanding volume of 150 voxels around the individual coordinates
 %    not done in this point. For now we apply the binary mask to it
 %
-% 5) anatomically-defined ROIs (suspended for now, need to check with Elahe')
+% 5) anatomically-defined ROIs
+
 
 %% Create / initialize the basics
 clear;
 clc;
 
 % add bidspm and init it
-addpath '/Users/cerpelloni/Desktop/GitHub/VisualBraille_data/code/lib/bidspm'
+addpath '/lib/bidspm'
 bidspm;
 
 % get options
@@ -93,6 +94,7 @@ for iSub = 1:length(opt.subjects)
         end
     end
 end
+
 
 %% Method #2 and #3 - 8mm and 10mm spheres around individual coordinates (one script for efficiency)
 % Technically intersections between sphere and brain mask
@@ -639,14 +641,4 @@ for iSub = 1:length(opt.subjects)
         end
     end
 end
-
-%% NOT NEEDED ANYMORE - OLD MARSBAR WAY
-% % create the sphere with marsbar (OLD WAY) and save it
-% params = struct('centre', ROI_center, 'radius', opt.radius);
-% roi = maroi_sphere(params);
-% saveroi(roi, [ROI_save_name, '.mat']);
-% mars_rois2img([ROI_save_name, '.mat'], [ROI_save_name, '.nii']);
-% % Delete .mat files, not necessary
-% delete([ROI_save_name, '_labels.mat']);
-% delete([ROI_save_name, '.mat']);
 

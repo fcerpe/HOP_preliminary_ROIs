@@ -1,21 +1,9 @@
-%% VISual BRAille ROI creation 
+%% HOPLAB fMRI pipeline - preliminary ROI creation 
 %
-% main script of the pipeline, extracts regions of interest (ROIs) for all
-% the regions we are, well, interested in.
-% Uses different scripts / methods based on the avialbility of localizer
-% data. 
-% The use of different methods is due to a limited localizer experiment
-% IMPORTANT: if data is stored using datalad, you need to unlock the
-% 'stats' and 'rois' folders first
-% 
-% ROIs and methods
-% - VWFA, lLO, rLO: localzier contrast [FW > SFW], expansion intersection
+% Main script for the creation of ROIs. From the options inputed in 'roi_option()', 
+% will follow different methods and produce preliminary rois. 
 %
-% - V1: intersection between [FW + SFW > rest] and anatomy toolbox V1 area
-%
-% - l-PosTemp (and other language areas): intersection between localizer 
-%   contrast [FW > SFW] and Fedorenko's atlas 
-
+% [Andrea's way of writing doc] 
 
 clear;
 clc;

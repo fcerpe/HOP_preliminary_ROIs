@@ -1,10 +1,63 @@
-function opt = roi_option()
-% returns a structure that contains the options chosen by the user to run
-% createROI (extraction)
+function [opt, roiMethods] = hop_option()
 
-if nargin < 1
-    opt = [];
-end
+%% HOPLAB ROI options 
+%
+% Stores the options created from the user to make new ROIs
+%
+% [Andrea's way of writing doc] 
+
+% returns two structures:
+%       
+%       opt: options for the different ROIs and some method-general paramteres (TBD)
+%       roiMethods: table-like structure that specifies all the methods and
+%                   the main parameters required to run the selected
+%                   extractions
+
+% Avoid possible overlaps for multiple runs 
+opt = [];
+roiMethods = [];
+
+
+%% Main parameters
+% 
+% these parameters are valid for all the methods and are stored in 'opt'
+
+% Paths 
+opt.dir.root = fullfile(fileparts(mfilename('fullpath')), '..', '..');
+opt.dir.raw = fullfile(opt.dir.root, 'inputs', 'raw');
+opt.dir.derivatives = fullfile(opt.dir.root, 'outputs', 'derivatives');
+opt.dir.preproc = fullfile(opt.dir.root, 'outputs', 'derivatives', 'bidspm-preproc');
+opt.dir.input = opt.dir.preproc;
+opt.dir.rois = fullfile(opt.dir.root, 'outputs', 'derivatives', 'cpp_spm-rois');
+opt.dir.stats = fullfile(opt.dir.root, 'outputs', 'derivatives', 'bidspm-stats');
+opt.dir.cosmo = fullfile(opt.dir.root, 'outputs', 'derivatives', 'CoSMoMVPA');
+opt.dir.jobs = fullfile(opt.dir.stats, 'jobs', opt.taskName);
+
+% Space of the data 
+% - IXI549Space: bidspm preprocessing
+% - MNI152NLin2009cAsym: fmriprep preprocessing
+% - individual: just in case it's needed
+opt.space = 'MNI152NLin2009cAsym'; 
+
+
+
+%% Template methods 
+%
+% Feel free to modify / copy / delete the following methods to your needs
+
+
+% Method #1 - Sphere
+
+
+% Method #2 - Intersection
+
+
+% Method #3 - Atlas 
+
+
+% Method #4 - 
+
+
 
 % suject to run in each group
 opt.subjects = {'006','007','008','009','010','011','012','013','018','019','020','021','022','023','024','026','027','028'}; 
@@ -37,9 +90,6 @@ opt.space = 'MNI152NLin2009cAsym';
 % Possibly obsolete
 opt.desc = 'ROI';
 
-% I like chatty outputs
-opt.verbosity = 2;
-
 % task to analyze
 opt.taskName = 'visualLocalizer';
 
@@ -57,13 +107,8 @@ opt.dir.cosmo = fullfile(opt.dir.root, 'outputs', 'derivatives', 'CoSMoMVPA');
 
 % Suffix output directory for the saved jobs
 opt.jobsDir = fullfile(opt.dir.stats, 'jobs', opt.taskName);
-opt.glm.QA.do = false;
 
-% multivariate
-opt.pipeline.type = 'roi';
 
-%% DO NOT TOUCH
-opt = checkOptions(opt);
-saveOptions(opt);
+
 
 end

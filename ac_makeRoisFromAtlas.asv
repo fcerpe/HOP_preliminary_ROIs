@@ -1,7 +1,6 @@
 % SCRIPT FOR EXTRACTING AND RESAMPLING ROIS FROM A BRODMANN ATLAS
 %
-% This script extracts specific regions of interest (ROIs) from a Brodmann area (BA) atlas and resamples them to match a given reference image. 
-% The resulting resampled ROIs are then saved as NIfTI and MATLAB files in the specified output folder.
+% This script extracts specific regions of interest (ROIs) from a Brodmann area (BA) atlas and resamples them to match a given reference image. The resulting resampled ROIs are then saved as NIfTI and MATLAB files in the specified output folder.
 %
 % The script takes the following parameters:
 %
@@ -109,7 +108,7 @@ if strcmp(atlasExt, '.gz')
     atlasFilename = atlasFilenameSplit{1};
 
 elseif strcmp(atlasExt, '.nii')
-
+    
     % Copy the file from the source folder to the destination folder
     newBaAtlasPath = fullfile(outPath, strcat(atlasFilename, '.nii'));
     copyfile(baAtlasPath, newBaAtlasPath);
