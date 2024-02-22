@@ -26,28 +26,30 @@ bidspm;
 % Follows parameters defined by the user in 'hop_option()'.
 % Several methods and their specifics are stored in the struct 'roi_methods'
 
-for iM = 1:numel(roi_methods)
+for iM = 1:numel(roiMethods)
+
+    % Notify the user
+    fprintf(['\n\n Processing method #', iM, ' - details']);
 
     % Extract ROIs ased on the method indicated
-    switch roi_methods(iM).method
+    switch roiMethods(iM).method
 
         case 'intersection'
-            % Intersect a spmT with either a sphere or another mask
-            hop_createROI_intersection(opt);
+            % Intersect a spmT map with either a sphere or another mask
+            hop_createROI_intersection(opt, roiMethods(iM));
 
         case 'sphere'
             % Create a sphere around specified coordinates
-            hop_createROI_sphere(opt);
+            hop_createROI_sphere(opt, roiMethods(iM));
 
         case 'atlas'
             % Take region from a specified area of an atlas
-            hop_createROI_atlas(opt);
-
-        case 'anatomical'
-            hop_createROI_anatomical(opt);
+            hop_createROI_atlas(opt, roiMethods(iM));
 
         case 'expansion'
-            hop_createROI_expansion(opt);
+            % Expand a progressively large sphere from specified
+            % coordinates and intersect it with a specified spmT map
+            hop_createROI_expansion(opt, roiMethods(iM));
 
     end
 

@@ -5,7 +5,7 @@ function [opt, roiMethods] = hop_option()
 % Stores the options created from the user to make new ROIs
 %
 % [Andrea's way of writing doc] 
-
+%
 % returns two structures:
 %       
 %       opt: options for the different ROIs and some method-general paramteres (TBD)
@@ -33,6 +33,7 @@ opt.dir.stats = fullfile(opt.dir.root, 'outputs', 'derivatives', 'bidspm-stats')
 opt.dir.cosmo = fullfile(opt.dir.root, 'outputs', 'derivatives', 'CoSMoMVPA');
 opt.dir.jobs = fullfile(opt.dir.stats, 'jobs', opt.taskName);
 
+
 % Space of the data 
 % - IXI549Space: bidspm preprocessing
 % - MNI152NLin2009cAsym: fmriprep preprocessing
@@ -40,42 +41,83 @@ opt.dir.jobs = fullfile(opt.dir.stats, 'jobs', opt.taskName);
 opt.space = 'MNI152NLin2009cAsym'; 
 
 
+% Subjects on which to perform ROI extraction
+% (default value, applied if not specified otherwise)
+opt.subjects = {'006','007'}; 
+
 
 %% Template methods 
+% 
+% Each method serves as a template, will then create combinations of all
+% the subjects, areas, radii (if applicable) 
 %
-% Feel free to modify / copy / delete the following methods to your needs
+% Feel free to modify / copy / delete the following methods to your needs,
+% adding all the subjects, areas, coords, contrasts needed
+% If a parameter only applies to a specific condition (e.g. two spheres of 
+% different dimensions for different areas), consider making a separate
+% section
+
+% METHOD #1 - Sphere of [radius]mm in [area]
+m1.method = 'sphere';
+
+% on which subjects should we extract ROIs?
+m1.subjects = {'006','007'}; 
+
+% what radii should the sphere(s) have?
+m1.radii = [10 
+             8 
+             6];
+
+% which areas will we extract? 
+m1.roiNames = {'area1'
+               'area2'};
+
+% from which coordinates? (if lateralized, omit controlateral coords but keep the order)
+m1.coordsLeft =  [0   0  0; 
+                  15 15 15];
+m1.coordsRight =  [0   0  0; 
+                  15 15 15];
+
+% Arrange parameters specified into a list of ROIs to create
+roiMethods(1) = arrangeParameters(m1);
 
 
-% Method #1 - Sphere
+
+% METHOD #2 - Intersection between [contrast] and [roi]
+roiMethods(2).method = 'intersection';
+
+% where to get the ROI and the tmap?
+roiMethods(2).roiPath = '../whatever';
+roiMethods(2).tmapPath = '../whatever';
+
+% which min. number of voxel can we accept? 
+roiMethods(4).nbVoxel = 25;
 
 
-% Method #2 - Intersection
+
+% METHOD #3 - Atlas: extraction of [area] from [atlas]
+roiMethods(3).method = 'atlas';
+
+% Which atlas are we using?
+% - select from list
+% - give for granted that the masks are in order
+roiMethods(3).atlas = 'Broadmann';
+roiMethods(3).mask = 'BA8';
+roiMethods(3).maskPath = '../whatever';
 
 
-% Method #3 - Atlas 
 
 
-% Method #4 - 
+% METHOD #4 - Expansion around [area] in [contrast]
+roiMethods(4).method = 'expansion';
+roiMethods(4).nbVoxel = 100;
 
 
-
-% suject to run in each group
-opt.subjects = {'006','007','008','009','010','011','012','013','018','019','020','021','022','023','024','026','027','028'}; 
-% Avaiable participants: 
-% '006','007','008','009','010','011','012','013','018','019','020','021','022','023','024','026','027','028'
 
 % ROIs for which we extracted peaks of  activation
 % Also, those to consider for the expansion intersection
 opt.roiList = {'VWFAfr', 'VWFAbr', 'lLO', 'rLO'};
 
-% Radius of the sphere around the peak
-opt.radius = 10; 
-
-% Number of voxels in the case of expanding ROI
-opt.numVoxels = 150;
-
-% Number of voxels in the case of expanding ROI
-opt.numLanguageVoxels = 80;
 
 % Save the ROI?
 opt.saveROI = true;
@@ -93,22 +135,55 @@ opt.desc = 'ROI';
 % task to analyze
 opt.taskName = 'visualLocalizer';
 
-% PATHS
-% The directory where the data are located
-opt.dir.root = fullfile(fileparts(mfilename('fullpath')), '..', '..');
 
-opt.dir.raw = fullfile(opt.dir.root, 'inputs', 'raw');
-opt.dir.derivatives = fullfile(opt.dir.root, 'outputs', 'derivatives');
-opt.dir.preproc = fullfile(opt.dir.root, 'outputs', 'derivatives', 'bidspm-preproc');
-opt.dir.input = opt.dir.preproc;
-opt.dir.rois = fullfile(opt.dir.root, 'outputs', 'derivatives', 'cpp_spm-rois');
-opt.dir.stats = fullfile(opt.dir.root, 'outputs', 'derivatives', 'bidspm-stats');
-opt.dir.cosmo = fullfile(opt.dir.root, 'outputs', 'derivatives', 'CoSMoMVPA');
+%% Check that everything is in order
 
-% Suffix output directory for the saved jobs
-opt.jobsDir = fullfile(opt.dir.stats, 'jobs', opt.taskName);
+% Sphere - all parameters should be present
 
+% Intersection - all parameters should be present
 
+% Expansion - all parameters should be present
+
+% Atlas - all parameters should be present and the atlas should be present
 
 
 end
+
+
+%% Support functions
+
+% Make combinations of all the parameters specified
+function outList = arrangeParameters(inList)
+
+outList = struct;
+
+% Assign method
+outList.method = inList.method;
+
+% Based on the method, combine other parameters
+switch inList.method
+
+    case 'sphere'
+        % make combinations
+
+        % assign coordinates to corresponding area
+
+
+end
+
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
