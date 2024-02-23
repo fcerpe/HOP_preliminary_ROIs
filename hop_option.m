@@ -29,14 +29,16 @@ roiMethods = [];
 % - preproc / stats / roi / cosmo: main folders (subfolders of derivatives)
 %                                  to store different steps of the pipeline
 % - jobs: where to store the copy of the script 
-opt.dir.root = fullfile(fileparts(mfilename('fullpath')), '..', '..');
+opt.dir.root = fullfile(fileparts(mfilename('fullpath')), '..', 'VisualBraille_data');
 opt.dir.raw = fullfile(opt.dir.root, 'inputs', 'raw');
 opt.dir.derivatives = fullfile(opt.dir.root, 'outputs', 'derivatives');
 opt.dir.preproc = fullfile(opt.dir.root, 'outputs', 'derivatives', 'bidspm-preproc');
 opt.dir.rois = fullfile(opt.dir.root, 'outputs', 'derivatives', 'cpp_spm-rois');
 opt.dir.stats = fullfile(opt.dir.root, 'outputs', 'derivatives', 'bidspm-stats');
 opt.dir.cosmo = fullfile(opt.dir.root, 'outputs', 'derivatives', 'CoSMoMVPA');
-opt.dir.jobs = fullfile(opt.dir.stats, 'jobs', opt.taskName);
+
+opt.dir.output = fullfile(fileparts(mfilename('fullpath')), 'outputs');
+opt.dir.jobs = fullfile(fileparts(mfilename('fullpath')), 'jobs');
 
 
 % DEFAULT OPTIONS 

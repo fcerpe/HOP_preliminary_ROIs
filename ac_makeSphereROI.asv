@@ -1,4 +1,4 @@
-function ac_makeSphereROI(opt, m)
+function ac_makeSphereROI(opt, method)
 
 % SCRIPT FOR GENERATING SPHERICAL ROI IN NIFTI FORMAT
 %
@@ -41,36 +41,43 @@ function ac_makeSphereROI(opt, m)
 
 % Parameters
 % Define the ROIs
-radii = m.radii;
+radii = method.radii;
 
 roisStruct = struct(); % Initialize the structure
 
 % FFA ROI
 roiName = 'FFA';
-mni_coordinates_l = [-38, -58, -14];
-mni_coordinates_r = [40, -55, -12];
+roisStruct(1).mni_coordinates_l = [-38, -58, -14];
+roisStruct(1).mni_coordinates_r = [40, -55, -12];
 
 % Reference image path (subject's functional image)
 refImagePath = '/data/projects/chess/data/BIDS/derivatives/SPM/gunzipped/sub-05/sub-05_task-exp_run-1_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii';      % Path of the reference image
 
+% Set output folder
+outRoot = '/data/projects/chess/data/BIDS/derivatives/marsbar';
 
-for iR = 1:length(m.radii)
-    radius = m.radii(iR);
+for iR = 1:length(method.radii)
+    radius = method.radii(iR);
 
     fprintf('\n###### Processing Radius %s ######\n', num2str(radius));
 
-    % If required, create output folder
-    if opt.saveInSubfolder
-
-        outPath = fullfile(opt.dir.output, ['method-', m.method '_radius-', num2str(radius)]);
-        mkdir(outPath)
-        fprintf('DONE: Created output folder: %s\n', outPath);
-    end
+    % Create output folder
+    % Set and create the output path
+    outPath = fullfile(outRoot, strcat('radius_', num2str(radius)));
+    fprintf('STEP: Creating output folder\n');
+    mkdir(outPath)
+    fprintf('DONE: Created output folder: %s\n', outPath);
 
     % Make ROI, resample, and merge if two hemispheres are provided
     % Loop through each ROI in the structure
-    for iROI = 1:length(roisStruct)
+    for roiID = 1:length(roisStruct)
 
+        % Retrieve the current ROI's parameters
+        roiStruct = roisStruct(roiID);
+
+        mni_coordinates_l = roiStruct.mni_coordinates_l;
+        mni_coordinates_r = roiStruct.mni_coordinates_r;
+        roiName = roiStruct.roiName;
 
         fprintf('\n--- Processing ROI: %s -  %s ---\n',roiName , num2str(radius));
 
@@ -123,9 +130,9 @@ for iR = 1:length(m.radii)
             finalRoiMat = zeros(refImg.dim);
 
             % Loop through and merge remaining ROIs
-            for iROI = 1:length(resampledRoisStruct)
+            for i = 1:length(resampledRoisStruct)
                 % Merge current ROI with the final ROI
-                currentRoiStruct = struct(resampledRoisStruct{iROI}).dat;
+                currentRoiStruct = struct(resampledRoisStruct{i}).dat;
                 finalRoiMat = currentRoiStruct > 0.5  | finalRoiMat > 0.5;
             end
                 

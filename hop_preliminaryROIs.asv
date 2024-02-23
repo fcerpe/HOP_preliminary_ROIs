@@ -29,7 +29,7 @@ bidspm;
 for iM = 1:numel(roiMethods)
 
     % Notify the user
-    fprintf(['\n\n Processing method #', iM, ' - details']);
+    fprintf(['\n\n Processing method #', num2str(iM), '\n\n']);
 
     % Extract ROIs ased on the method indicated
     switch roiMethods(iM).method
