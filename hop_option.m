@@ -13,51 +13,73 @@ function [opt, roiMethods] = hop_option()
 %                   the main parameters required to run the selected
 %                   extractions
 
-% Avoid possible overlaps for multiple runs 
+% Avoid possible overlaps for multiple runs, start from scratch everytime
 opt = [];
 roiMethods = [];
 
 
 %% Main parameters
-% 
 % these parameters are valid for all the methods and are stored in 'opt'
 
-% Paths 
+
+% PATHS 
+% - root: main folder of the project
+% - raw: where your un-preprocessed data is
+% - derivatives: main folder where you store the results
+% - preproc / stats / roi / cosmo: main folders (subfolders of derivatives)
+%                                  to store different steps of the pipeline
+% - jobs: where to store the copy of the script 
 opt.dir.root = fullfile(fileparts(mfilename('fullpath')), '..', '..');
 opt.dir.raw = fullfile(opt.dir.root, 'inputs', 'raw');
 opt.dir.derivatives = fullfile(opt.dir.root, 'outputs', 'derivatives');
 opt.dir.preproc = fullfile(opt.dir.root, 'outputs', 'derivatives', 'bidspm-preproc');
-opt.dir.input = opt.dir.preproc;
 opt.dir.rois = fullfile(opt.dir.root, 'outputs', 'derivatives', 'cpp_spm-rois');
 opt.dir.stats = fullfile(opt.dir.root, 'outputs', 'derivatives', 'bidspm-stats');
 opt.dir.cosmo = fullfile(opt.dir.root, 'outputs', 'derivatives', 'CoSMoMVPA');
 opt.dir.jobs = fullfile(opt.dir.stats, 'jobs', opt.taskName);
 
 
+% DEFAULT OPTIONS 
+% Applied in case no specific parameter is given in a method
+% (i.e. if you don't choose specific subejcts, will apply the method on all these subs)
+
 % Space of the data 
-% - IXI549Space: bidspm preprocessing
-% - MNI152NLin2009cAsym: fmriprep preprocessing
-% - individual: just in case it's needed
-opt.space = 'MNI152NLin2009cAsym'; 
+% Any space is fine, as long as it's consistent with the space
+% indicated in the ROI. Will use this parameter to find and to save ROIs
+% Examples: 
+% - IXI549Space (bidspm preprocessing)
+% - MNI152NLin2009cAsym (fmriprep preprocessing)
+% - individual
+% - MNI
+opt.space = 'IXI549Space'; 
 
+% Level on which to draw ROIs
+% choose the default option to draw ROIs: 
+% - individual: on each subject
+% - group
+opt.level.default = 'individual';
 
-% Subjects on which to perform ROI extraction
-% (default value, applied if not specified otherwise)
-opt.subjects = {'006','007'}; 
+% In the case of individual ROIs, enter a default list of subjects. If not
+% specificed for a give method, will apply the method on subjects from this
+% list
+opt.level.subjects = {'006','007'}; 
 
+% Task
+% used to find contrasts in the 'intersection' and 'expansion' methods
+opt.task = 'task';
 
-% Task to analyze
-opt.taskName = 'task';
+% Save ROIs
+% choose whether to save the ROIs and whether to use subfolders for each method
+opt.saveROI = true;
+opt.saveInSubfolder = false; 
 
 
 %% Template methods 
-% 
-% Each method serves as a template
 % Feel free to modify / copy / delete the following methods to your needs,
-% adding all the subjects, areas, coords, contrasts needed
+% adding all the parameters needed
 
 
-% METHOD #1 - Sphere of [radius]mm in [area]
+%% Method #1 - Sphere of [radius]mm in [area]
 roiMethods(1).method = 'sphere';
 
 % on which subjects should we extract ROIs?
@@ -67,66 +89,77 @@ roiMethods(1).subjects = {'006','007'};
 roiMethods(1).radii = [10, 8, 6];
 
 % which areas will we extract? 
-roiMethods(1).roiNames = {'area1';
-                          'area2'};
+roiMethods(1).area = {'area1';
+                      'area2'};
 
 % from which coordinates? 
 % (if lateralized, omit controlateral coords using NaNs)
-roiMethods(1).coordsLeft =  [0 0 0; 
+roiMethods(1).coordsLeft = [0 0 0; 
+                            15 15 15];
+roiMethods(1).coordsRight = [0 0 0; 
                              15 15 15];
-roiMethods(1).coordsRight =  [0 0 0; 
-                              15 15 15];
 
 
-
-% METHOD #2 - Intersection between [contrast] and [roi]
+%% Method #2 - Intersection between [contrast] and [roi]
 roiMethods(2).method = 'intersection';
 
-% where to get the ROI and the tmap?
+% on which subjects should we extract ROIs?
+roiMethods(2).subjects = {'006','007'}; 
+
+% which area will be extracted?
+roiMethods(2).area = 'area1';
+
+% details of the ROI
 roiMethods(2).roiPath = '../whatever';
+
+% Optional: t-map can be difend either by providing information to extract
+% the contrast, or by the exported .nii map
 roiMethods(2).tmapPath = '../whatever';
+roiMethods(2).task = 'task';
+roiMethods(2).contrast = 'contrast';
 
 % which min. number of voxel can we accept? 
 roiMethods(2).nbVoxel = 25;
 
 
-
-% METHOD #3 - Atlas: extraction of [area] from [atlas]
+%% Method #3 - Atlas: extraction of [area] from [atlas]
+% Assumes that the mask is correct, will trust you on this
 roiMethods(3).method = 'atlas';
 
-% Which atlas are we using?
-% - select from list
-% - give for granted that the masks are in order
-roiMethods(3).atlas = 'Broadmann';
-roiMethods(3).mask = 'BA8';
+% atlas and mask names are used to save the mask 
+roiMethods(3).atlas = 'atlas';
+roiMethods(3).mask = 'label';
 roiMethods(3).maskPath = '../whatever';
 
 
-
-
-% METHOD #4 - Expansion around [area] in [contrast]
+%% Method #4 - Expansion around [area] in [contrast]
 roiMethods(4).method = 'expansion';
+
+% How many voxels we want to reach?
 roiMethods(4).nbVoxel = 100;
 
+% Sphere
+roiMethods(4).area = {'area1'};
+roiMethods(4).coordsLeft = [0 0 0];
+roiMethods(4).coordsRight = [0 0 0];
+
+% T-map
+roiMethods(4).tmapPath = '../whatever';
+roiMethods(4).task = 'task';
+roiMethods(4).contrast = 'contrast';
 
 
-% description to add to folder name, to distinguish from GLM 
-% Possibly obsolete
-opt.desc = 'ROI';
 
+%% Preliminary checks
+% is everything in order? 
 
-
-
-%% Check that everything is in order
+% Throw an error if something major is missing (paths, areas)
+% Add defaults if something minor is missing (subs, radii, voxels)
 
 % Sphere - all parameters should be present
-
 % Intersection - all parameters should be present
-
 % Expansion - all parameters should be present
-
 % Atlas - all parameters should be present and the atlas should be present
-
 
 end
 
@@ -135,23 +168,6 @@ end
 
 
 
-outList = struct;
-
-% Assign method
-outList.method = inList.method;
-
-% Based on the method, combine other parameters
-switch inList.method
-
-    case 'sphere'
-        % make combinations
-
-        % assign coordinates to corresponding area
-
-
-end
-
-end
 
 
 

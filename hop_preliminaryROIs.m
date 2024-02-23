@@ -9,8 +9,8 @@
 %% Load options and necessary toolboxes 
 
 % nice and clean
-clear;
-clc;
+clear
+clc
 
 % Initialize marsbar, spm, etc
 % (all taken care of by bidspm)
