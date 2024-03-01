@@ -29,7 +29,7 @@ roiMethods = [];
 % - preproc / stats / roi / cosmo: main folders (subfolders of derivatives)
 %                                  to store different steps of the pipeline
 % - jobs: where to store the copy of the script 
-opt.dir.root = fullfile(fileparts(mfilename('fullpath')), '..', 'VisualBraille_data');
+opt.dir.root = fullfile(fileparts(mfilename('fullpath')), '..', 'VBE_data');
 opt.dir.raw = fullfile(opt.dir.root, 'inputs', 'raw');
 opt.dir.derivatives = fullfile(opt.dir.root, 'outputs', 'derivatives');
 opt.dir.preproc = fullfile(opt.dir.root, 'outputs', 'derivatives', 'bidspm-preproc');
@@ -55,6 +55,19 @@ opt.dir.jobs = fullfile(fileparts(mfilename('fullpath')), 'jobs');
 % - MNI
 opt.space = 'IXI549Space'; 
 
+
+% Stats parameters
+% used to find correct GLM analysis and necessary files 
+% * Task: to find contrasts in the 'intersection' and 'expansion' methods
+opt.task = 'visualLocalizer';
+
+% * Node
+opt.node = 'localizerGLM';
+
+% * FWHM
+opt.fwhm = 6;
+
+
 % Level on which to draw ROIs
 % choose the default option to draw ROIs: 
 % - individual: on each subject
@@ -66,13 +79,14 @@ opt.level.default = 'individual';
 % list
 opt.level.subjects = {'006','007'}; 
 
-% Task
-% used to find contrasts in the 'intersection' and 'expansion' methods
-opt.task = 'task';
 
 % Save ROIs
 % choose whether to save the ROIs and whether to use subfolders for each method
 opt.saveROI = true;
+
+% subfolder is only applicable to 'intersection' and 'expansion' methods
+% methods 'sphere' and 'atlas' do not include subjects, so they will be
+% added to subfolders that specify method used and radius/atlas
 opt.saveInSubfolder = false; 
 
 
@@ -84,23 +98,27 @@ opt.saveInSubfolder = false;
 %% Method #1 - Sphere of [radius]mm in [area]
 roiMethods(1).method = 'sphere';
 
-% on which subjects should we extract ROIs?
-roiMethods(1).subjects = {'006','007'}; 
-
 % what radii should the sphere(s) have?
 roiMethods(1).radii = [10, 8, 6];
 
 % which areas will we extract? 
-roiMethods(1).area = {'area1';
-                      'area2'};
+roiMethods(1).area = {'VWFA'};
 
 % from which coordinates? 
 % (if lateralized, omit controlateral coords using NaNs)
-roiMethods(1).coordsLeft = [0 0 0; 
-                            15 15 15];
-roiMethods(1).coordsRight = [0 0 0; 
-                             15 15 15];
+roiMethods(1).coordsL = [-46 -56 -16];
+roiMethods(1).coordsR = [NaN NaN NaN];
 
+% for this method, we need a reference image (any beta.nii from any
+% subject's GLM). Which path should we follow? 
+roiMethods(1).referencePath = fullfile(opt.dir.stats, ['sub-', roiMethods(1).subjects{1}], ...
+                                       ['task-', opt.task,'_space-',opt.space,'_FWHM-', num2str(opt.fwhm),'_node-',opt.node], ...
+                                       'beta_0001.nii');
+
+% Do you want the ROIs to be merged across hemispheres? 
+% Only available in the case you provide two valid coordinates sets for
+% left and right hemisphere. If not, won't merge regardless your choice
+roiMethods(1).mergeRois = 0;
 
 %% Method #2 - Intersection between [contrast] and [roi]
 roiMethods(2).method = 'intersection';
@@ -142,8 +160,8 @@ roiMethods(4).nbVoxel = 100;
 
 % Sphere
 roiMethods(4).area = {'area1'};
-roiMethods(4).coordsLeft = [0 0 0];
-roiMethods(4).coordsRight = [0 0 0];
+roiMethods(4).coordsL = [0 0 0];
+roiMethods(4).coordsR = [0 0 0];
 
 % T-map
 roiMethods(4).tmapPath = '../whatever';
