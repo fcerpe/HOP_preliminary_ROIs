@@ -111,7 +111,7 @@ roiMethods(1).coordsR = [NaN NaN NaN];
 
 % for this method, we need a reference image (any beta.nii from any
 % subject's GLM). Which path should we follow? 
-roiMethods(1).referencePath = fullfile(opt.dir.stats, ['sub-', roiMethods(1).subjects{1}], ...
+roiMethods(1).referencePath = fullfile(opt.dir.stats, ['sub-', opt.level.subjects{1}], ...
                                        ['task-', opt.task,'_space-',opt.space,'_FWHM-', num2str(opt.fwhm),'_node-',opt.node], ...
                                        'beta_0001.nii');
 
@@ -120,36 +120,56 @@ roiMethods(1).referencePath = fullfile(opt.dir.stats, ['sub-', roiMethods(1).sub
 % left and right hemisphere. If not, won't merge regardless your choice
 roiMethods(1).mergeRois = 0;
 
-%% Method #2 - Intersection between [contrast] and [roi]
-roiMethods(2).method = 'intersection';
+
+%% Method #2 - Atlas: extraction of [area] from [atlas]
+% Assumes that the mask is correct, will trust you on this
+roiMethods(2).method = 'atlas';
+
+% for this method, we need a reference image (any beta.nii from any
+% subject's GLM). Which path should we follow? 
+roiMethods(2).referencePath = fullfile(opt.dir.stats, ['sub-', opt.level.subjects{1}], ...
+                                       ['task-', opt.task,'_space-',opt.space,'_FWHM-', num2str(opt.fwhm),'_node-',opt.node], ...
+                                       'beta_0001.nii');
+
+
+% atlas and mask names are used to save the mask 
+% avaialble atlases are:
+% - Broadmann
+% - visfatlas (coming soon)
+% - fedorenko (coming soon)
+roiMethods(2).atlas = 'Brodmann';
+roiMethods(2).masks = {'DLPFC', 'LVC'};
+roiMethods(2).parcels = [9 46; 
+                         17 18];
+
+% are you working on a personal / specific parcels? 
+% you can do it here, by 
+% - setting 'customAtlas' to 'TRUE' 
+% - selecting the specific path of your mask 
+roiMethods(2).customAtlas = 0;
+roiMethods(2).roiPath = 'masks/path-to-custom-parcel';
+
+
+%% Method #3 - Intersection between [contrast] and [roi]
+roiMethods(3).method = 'intersection';
 
 % on which subjects should we extract ROIs?
-roiMethods(2).subjects = {'006','007'}; 
+roiMethods(3).subjects = {'006','007'}; 
 
 % which area will be extracted?
-roiMethods(2).area = 'area1';
+roiMethods(3).area = 'area1';
 
 % details of the ROI
-roiMethods(2).roiPath = '../whatever';
+roiMethods(3).roiPath = '../whatever';
 
 % Optional: t-map can be difend either by providing information to extract
 % the contrast, or by the exported .nii map
-roiMethods(2).tmapPath = '../whatever';
-roiMethods(2).task = 'task';
-roiMethods(2).contrast = 'contrast';
+roiMethods(3).tmapPath = '../whatever';
+roiMethods(3).task = 'task';
+roiMethods(3).contrast = 'contrast';
 
 % which min. number of voxel can we accept? 
-roiMethods(2).nbVoxel = 25;
-
-
-%% Method #3 - Atlas: extraction of [area] from [atlas]
-% Assumes that the mask is correct, will trust you on this
-roiMethods(3).method = 'atlas';
-
-% atlas and mask names are used to save the mask 
-roiMethods(3).atlas = 'atlas';
-roiMethods(3).mask = 'label';
-roiMethods(3).maskPath = '../whatever';
+roiMethods(3).nbVoxel = 25;
 
 
 %% Method #4 - Expansion around [area] in [contrast]

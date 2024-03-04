@@ -1,0 +1,207 @@
+function ac_makeRoisFromAtlas(opt, m)
+
+% FUNCTION TO EXTRACT ROIS FROM A GIVEN ATLAS
+%
+% This script extracts specific regions of interest (ROIs) from provided 
+% parcels of an atlas and resamples them to match a given reference image. 
+% The resulting resampled ROIs are then saved as NIfTI and MATLAB files in 
+% the specified output folder.
+%
+% The script takes the following parameters:
+%
+%     opt: general options about the folder and files of the project.
+%          information about specific paramters can be found in 'hop_opton'
+%
+%     m: a struct that contains all the specific parameters of this method
+%           method: the name of the method requested (e.g. 'atlas')
+%           referencePath: the path of the reference image used for resampling the ROIs
+%           atlas: the name of the atlas used 
+%           mask: an array containing the label(s) of the parcel(s) to
+%                 extract
+%           roiPath: an array containing the paths of the masks
+%
+%
+% The script performs the following steps:
+%
+%     - creates an output folder that specifies method and atlas used, if it does not already exist
+%     - loads the reference image for resampling
+%     - loads the atlas requested, and extracts voxel data 
+%     - iterates over each ROI requested
+%     - extracts the voxels corresponding to the specified parcel(s)
+%     - binarizes the resulting ROI
+%     - resamples the ROIs to match the reference image space
+%     - verifies the compatibility of the resampled ROI and the reference image
+%     - stores the resampled ROIs in a cell array
+%     - merges the resampled ROIs if coordinates are provided for both hemispheres
+%     - saves the merged ROI as a NIfTI file in the output folder
+%     - copies the script file to the output folder for replicability.
+%
+%
+% Dependencies: MarsBaR, SPM
+%
+% Author: Andrea Costantino
+% Date: 7 July 2023
+%  
+% Edited by: Filippo Cerpelloni
+% Date: March 2024
+
+%% Prepare inputs and outputs
+
+% Create output folder
+% will create a subfolder in output with the format 'mathod-atlas_atlas-[atlas specified]
+% If the folder is already present, will not overwrite. Be careful not to
+% overwrite files
+outputFolder = createOutputFolder(opt, m);
+
+% Subfunctions: loadReferenceImage, unzipFile, copyFromSourceToDestination
+% Import reference image, gunzip if needed
+[refPath, refFilename, refExt] = fileparts(m.referencePath);
+if strcmp(refExt, '.gz')
+    % Gunzip and extract gunzipped file path
+    refPathCell = gunzip(m.referencePath, opt.dir.output);
+    refImagePath = refPathCell{1};
+
+    % Get the filename without the .nii extension
+    atlasFilenameSplit = split(refFilename, '.');
+    refFilename = atlasFilenameSplit{1};
+elseif strcmp(refExt, '.nii')
+    % Copy the file from the source folder to the destination folder
+    newrefImagePath = fullfile(outputFolder, strcat(refFilename, '.nii'));
+    copyfile(m.referencePath, newrefImagePath);
+    refImagePath = newrefImagePath;
+else
+    error('No file ATLAS file found!');
+end
+
+% Load reference image for resampling
+fprintf('STEP: Getting REF data \n');
+refImgsStructLong = spm_vol(refImagePath);
+refImgStruct = refImgsStructLong(1,1);
+refSpace = mars_space(refImgStruct);
+fprintf('DONE: REF data loaded \n');
+
+
+% Get atlas path, later will do the whole import
+baAtlasPath = importAtlas(m);
+
+% Import BA atlas and gunzip if needed
+fprintf('STEP: Getting ATLAS data \n');
+[atlasPath, atlasFilename, atlasExt] = fileparts(baAtlasPath);
+if strcmp(atlasExt, '.gz')
+    % Gunzip and extract gunzipped file path
+    baAtlasPathCell = gunzip(baAtlasPath, opt.dir.output);
+    baAtlasPath = baAtlasPathCell{1};
+
+    % Get the filename without the .nii extension
+    atlasFilenameSplit = split(atlasFilename, '.');
+    atlasFilename = atlasFilenameSplit{1};
+
+elseif strcmp(atlasExt, '.nii')
+
+    % Copy the file from the source folder to the destination folder
+    newBaAtlasPath = fullfile(outputFolder, strcat(atlasFilename, '.nii'));
+    copyfile(baAtlasPath, newBaAtlasPath);
+    baAtlasPath = newBaAtlasPath;
+else
+    error('No file ATLAS file found!');
+end
+
+% Load atlas img and voxel data
+fprintf('STEP: Getting ATLAS data \n');
+atlasStruct = spm_vol(baAtlasPath);
+atlas = spm_read_vols(atlasStruct);
+
+fprintf('DONE: ATLAS data loaded.\n');
+
+%% Make ROI, resample, and merge if two labels are provided
+% Loop through each ROI in the structure
+for iRoi = 1:length(m.masks)
+
+    % Retrieve the current ROI's parameters
+    roiName = m.masks{iRoi};
+    roiParcels = m.parcels(iRoi, :);
+    roiParcelsString = join(split(num2str(roiParcels),'  '), '-');
+
+    fprintf('\n--- Processing ROI: %s ---\n',roiName);
+
+    % Skip this iteration if both coordinates are empty
+    if isempty(roiParcels)
+        fprintf('SKIP: Brodmann areas labels are empty. Skipping...\n');
+        continue;
+    end
+
+    % Initialize empty array to store selected voxels
+    roiArray = zeros(atlasStruct.dim);
+
+    % For each BA label get the voxels in that area
+    for iPar = 1:length(roiParcels)
+        parcel = roiParcels(iPar);
+        if ~isempty(parcel)
+
+            fprintf('STEP: Extracting area %s for ROI %s\n', num2str(parcel), roiName);
+            % Assign 1 to the final array if the array is 1 or the atlas
+            % voxels belong to the selected Brodmann area
+            roiArray = roiArray == 1 | atlas == parcel;
+
+        end
+    end
+
+    % Binarize the mask after rebasing
+    finalRoiArray = double(roiArray);
+
+    % Get and print number of selected voxels ( == 1)
+    getSelectedVoxels(finalRoiArray)
+    numVoxOnes = sum(finalRoiArray(:) == 1);
+    numVoxNotOnes = sum(finalRoiArray(:) == 0);
+    numVox = length(finalRoiArray(:));
+    
+    assert(isequal(numVoxOnes+numVoxNotOnes, numVox), 'The non-rebased ROI array is not binary.');
+
+    fprintf('INFO: selected voxels BEFORE rebasing: %s\n', num2str(numVoxOnes))
+
+    % Now that we have the final array, create a maroi object to resample 
+    % the final array to our desired space (the subject's space -> MNI)
+    roiMaroi = maroi_matrix(struct('dat', finalRoiArray, 'mat', atlasStruct.mat, ...
+                                   'label', sprintf('Binarized %s [%s]', roiName, num2str(roiParcels)), 'binarize', 1, 'roithresh', 0.5 ));
+    
+    % Resample and reslice the ROI
+    resampledRoi = maroi_matrix(roiMaroi, refSpace);
+
+    % Verify that the resampled ROI and the reference image are in the same space
+    resampledRoiStruct = struct(resampledRoi);
+
+    assert(isequal(refImgStruct.mat, resampledRoiStruct.mat), 'The "mat" of the two images is not the same.');
+    assert(isequal(refImgStruct.dim, size(resampledRoiStruct.dat)), 'The "size" of the two images is not the same.');
+
+    % Get and print number of selected voxels after rebasing ( == 1)
+    numResampledVoxOnes = sum(resampledRoiStruct.dat(:) == 1);
+    numResampledVoxNotOnes = sum(resampledRoiStruct.dat(:) == 0);
+    numResampledVox = length(resampledRoiStruct.dat(:));
+
+    assert(isequal(numVoxOnes+numVoxNotOnes, numVox), 'The rebased ROI array is not binary.');
+
+    fprintf('INFO: selected voxels AFTER rebasing: %s\n', num2str(numResampledVoxOnes))
+
+    % Save resampled ROI
+    outRoiName = sprintf('ROI-%s_BA-%s_binarized', roiName, roiParcelsString{1});
+    outRoiPath = fullfile(outputFolder, outRoiName);
+
+    save_as_image(resampledRoi, strcat(outRoiPath, '.nii'));
+    saveroi(resampledRoi, strcat(outRoiPath, '.mat'));
+
+    fprintf('DONE: Resampled %s ROI saved as: %s\n', roiName, outRoiPath);
+
+    fprintf('Processing ROI %s: COMPLETED!\n\n',roiName);
+            
+end
+
+%% Save script
+% Copy this script to the output folder for replicability
+% fileNameAndLocation = [mfilename('fullpath')];
+% [path, filename, ext] = fileparts(fileNameAndLocation);
+% outputFileNameAndLocation = fullfile(outPath, strcat(filename, '.m'));
+% currentfile = strcat(fileNameAndLocation, '.m');
+% copyfile(currentfile, outputFileNameAndLocation);
+% fprintf('Script copied to output folder\n');
+
+end

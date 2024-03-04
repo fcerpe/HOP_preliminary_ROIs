@@ -15,6 +15,7 @@ clc
 % Initialize marsbar, spm, etc
 % (all taken care of by bidspm)
 addpath 'lib/bidspm'
+addpath './src'
 bidspm;
 
 % Load options from function
@@ -26,10 +27,10 @@ bidspm;
 % Follows parameters defined by the user in 'hop_option()'.
 % Several methods and their specifics are stored in the struct 'roi_methods'
 
-for iM = 1:numel(roiMethods)
+for iM = 2:numel(roiMethods)
 
     % Notify the user
-    fprintf(['\n\n Processing method #', num2str(iM), '\n\n']);
+    fprintf(['\n\n Processing method #', num2str(iM), ' - ', roiMethods(iM).method, '\n\n']);
 
     % Extract ROIs ased on the method indicated
     switch roiMethods(iM).method
@@ -40,7 +41,7 @@ for iM = 1:numel(roiMethods)
 
         case 'sphere'
             % Create a sphere around specified coordinates
-            ac_makeSphereROI(opt, roiMethods(iM)); % -> hop_createROI_sphere
+            hop_createROI_sphere(opt, roiMethods(iM)); 
 
         case 'atlas'
             % Take region from a specified area of an atlas
@@ -54,3 +55,5 @@ for iM = 1:numel(roiMethods)
     end
 
 end
+
+

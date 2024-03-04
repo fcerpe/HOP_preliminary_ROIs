@@ -27,10 +27,9 @@ function hop_createROI_sphere(opt, m)
 % The script performs the following steps:
 %
 %     - loads the reference image for resampling
-%     - iterates over 
+%     - iterates over each speficied radius
 %     - if not present, creates an output folder for each radius
-%     - iterates over each ROI in m
-%     -  and creates a mars_space object for resampling
+%     - iterates over each ROI requested
 %     - creates sphere ROIs for the left and right hemispheres using the specified MNI coordinates
 %     - resamples the ROIs to match the reference image space
 %     - verifies the compatibility of the resampled ROI and the reference image
@@ -39,7 +38,7 @@ function hop_createROI_sphere(opt, m)
 %     - saves the merged ROI as a NIfTI file in the output folder
 %     - copies the script file to the output folder for replicability.
 %
-% The script is executed for each radius specified in the radii vector.%
+% The script is executed for each radius specified in the radii vector%
 % Dependencies: MarsBaR, SPM
 %
 % Author: Andrea Costantino
@@ -69,7 +68,9 @@ for iRad = 1:length(m.radii)
     % subfuction for this
     % add information about method used and method-specific parameters
     outPath = fullfile(opt.dir.output, ['method-', m.method '_radius-', num2str(radius)]);
-    mkdir(outPath)
+    if ~exist(outPath, 'dir')
+        mkdir(outPath)
+    end
 
     fprintf(['ROIs will be saved in: ''', outPath, '''\n']);
 
