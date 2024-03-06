@@ -32,7 +32,7 @@ function hop_createROI_atlas(opt, m)
 %     - resamples the ROIs to match the reference image space
 %     - verifies the compatibility of the resampled ROI and the reference image
 %     - stores the resampled ROIs in a cell array
-%     - merges the resampled ROIs if coordinates are provided for both hemispheres
+%     - merges the resampled ROIs if multiple parcels are provided
 %     - saves the merged ROI as a NIfTI file in the output folder
 %     - copies the script file to the output folder for replicability.
 %
@@ -45,7 +45,7 @@ function hop_createROI_atlas(opt, m)
 % Edited by: Filippo Cerpelloni
 % Date: March 2024
 
-%% Prepare inputs and outputs
+% Prepare inputs and outputs
 
 % Create output folder
 % will create a subfolder in output with the format 'mathod-atlas_atlas-[atlas specified]
@@ -53,75 +53,32 @@ function hop_createROI_atlas(opt, m)
 % overwrite files
 outputFolder = createOutputFolder(opt, m);
 
+% Import the reference image
+% - gunzip if necessary
+% - save a copy in the method's output folder
+[referenceSpace, referenceStruct] = loadReference(opt, m, outputFolder);
 
-% Subfunctions: loadReferenceImage, unzipFile, copyFromSourceToDestination
-% Import reference image, gunzip if needed
-[refPath, refFilename, refExt] = fileparts(m.referencePath);
-if strcmp(refExt, '.gz')
-    % Gunzip and extract gunzipped file path
-    refPathCell = gunzip(m.referencePath, opt.dir.output);
-    refImagePath = refPathCell{1};
-
-    % Get the filename without the .nii extension
-    atlasFilenameSplit = split(refFilename, '.');
-    refFilename = atlasFilenameSplit{1};
-elseif strcmp(refExt, '.nii')
-    % Copy the file from the source folder to the destination folder
-    newrefImagePath = fullfile(outputFolder, strcat(refFilename, '.nii'));
-    copyfile(m.referencePath, newrefImagePath);
-    refImagePath = newrefImagePath;
-else
-    error('No file ATLAS file found!');
-end
-
-% Load reference image for resampling
-fprintf('STEP: Getting REF data \n');
-refImgsStructLong = spm_vol(refImagePath);
-refImgStruct = refImgsStructLong(1,1);
-refSpace = mars_space(refImgStruct);
-fprintf('DONE: REF data loaded \n');
+% Import atlas
+% - from atlas requested, pick the correct path
+% - gunzip if necessary
+% - save a copy in the method's output folder
+[atlas, atlasStruct] = loadAtlas(opt, m, outputFolder);
 
 
-% Get atlas path, later will do the whole import
-baAtlasPath = importAtlas(m);
+% Loop through each ROI requested
+% - make ROI 
+% - resample
+% - merge if two labels are provided
+for iRTC = 1:length(m.roisToCreate)
 
-% Import BA atlas and gunzip if needed
-fprintf('STEP: Getting ATLAS data \n');
-[atlasPath, atlasFilename, atlasExt] = fileparts(baAtlasPath);
-if strcmp(atlasExt, '.gz')
-    % Gunzip and extract gunzipped file path
-    baAtlasPathCell = gunzip(baAtlasPath, opt.dir.output);
-    baAtlasPath = baAtlasPathCell{1};
+    % Select current ROI to work on
+    currROI = m.roisToCreate(iRTC);
 
-    % Get the filename without the .nii extension
-    atlasFilenameSplit = split(atlasFilename, '.');
-    atlasFilename = atlasFilenameSplit{1};
+    % Notifiy user
+    fprintf(['\nSTEP: Processing ROI: ', currROI.area, '\n']);
 
-elseif strcmp(atlasExt, '.nii')
-
-    % Copy the file from the source folder to the destination folder
-    newBaAtlasPath = fullfile(outputFolder, strcat(atlasFilename, '.nii'));
-    copyfile(baAtlasPath, newBaAtlasPath);
-    baAtlasPath = newBaAtlasPath;
-else
-    error('No file ATLAS file found!');
-end
-
-% Load atlas img and voxel data
-fprintf('STEP: Getting ATLAS data \n');
-atlasStruct = spm_vol(baAtlasPath);
-atlas = spm_read_vols(atlasStruct);
-
-fprintf('DONE: ATLAS data loaded.\n');
-
-
-%% Make ROI, resample, and merge if two labels are provided
-% Loop through each ROI in the structure
-for iRoi = 1:length(m.masks)
-
-    % Retrieve the current ROI's parameters
-    roiName = m.masks{iRoi};
-    roiParcels = m.parcels(iRoi, :);
+    roiName = m.masks{iRTC};
+    roiParcels = m.parcels(iRTC, :);
     roiParcelsString = join(split(num2str(roiParcels),'  '), '-');
 
     fprintf('\n--- Processing ROI: %s ---\n',roiName);
@@ -164,10 +121,7 @@ for iRoi = 1:length(m.masks)
     resampledRoi = maroi_matrix(roiMaroi, refSpace);
 
     % Verify that the resampled ROI and the reference image are in the same space
-    resampledRoiStruct = struct(resampledRoi);
-
-    assert(isequal(refImgStruct.mat, resampledRoiStruct.mat), 'The "mat" of the two images is not the same.');
-    assert(isequal(refImgStruct.dim, size(resampledRoiStruct.dat)), 'The "size" of the two images is not the same.');
+    checkCorrespondance(referenceSpace, resampledRoi);
 
     % Get and print number of selected voxels after rebasing ( == 1)
     getSelectedVoxels(resampledRoiStruct.dat)

@@ -16,20 +16,19 @@ function outputFolder = createOutputFolder(opt, m, detail, subject)
     % This function constructs the output directory path, checks if it exists,
     % and creates it if not, with logging at each step for clarity.
 
-    % FIND WAY TO  DEAL WITH VARGIN
-    % skip subject if the method is generic
-%     if isempty(subject) 
-%         addSubject = 0;
-%     end 
+    % if subject argument is passed (i.e. 4 input arguments are passed to the function),
+    % make a note to create a subject-specific folder.
+    % Otherwise, do not add the subject
+    addSub = nargin == 4;
 
-    % get method specifics
+    % get method specifics, if they are not passed as input already
     switch m.method
         case 'sphere'
-            methodDetails = [];
+            methodDetails = ['_radius-', num2str(detail)];
         case 'atlas'
             methodDetails = ['_atlas-', m.atlas];
         case 'intersection'
-            methodDetails = [];
+            methodDetails = ['_joined-', extractIntersection(m)];
         case 'expansion' 
             methodDetails = [];
     end
@@ -38,7 +37,9 @@ function outputFolder = createOutputFolder(opt, m, detail, subject)
     % - specified (general) output folder
     % - method name and its details
     % - subject if needed (coming soon)
-    outputFolder = fullfile(opt.dir.output, ['method-', m.method, methodDetails]);
+    if addSub, outputFolder = fullfile(opt.dir.output, ['method-', m.method, methodDetails], subject);
+    else, outputFolder = fullfile(opt.dir.output, ['method-', m.method, methodDetails]);
+    end
     
     % Create the folder, if it does not already exists
     if ~exist(outputFolder, 'dir')
@@ -58,8 +59,44 @@ function outputFolder = createOutputFolder(opt, m, detail, subject)
         fprintf('Output folder already exists: ''%s'' \nNo action needed\n\n', outputFolder);
     end
 
+end
 
 
+%% Subfunctions
+
+% From the path of the ROI used in the intersection between ROI and GLM,
+% extract details to summarize the ROI used
+% e.g. path = '/method-sphere_radius-10/' -> '10mm-sphere'
+%      path = '/method-atlas_atlas-Brodmann/..._ROI-DLPFC' -> 'Brodmann-DLPFC
+% other options TBD
+function outStr = extractIntersection(m)
+    
+    % isolate roi name 
+    roiParts = split(m.roiPath, '/');
+    roiName = roiParts{end}; 
+
+    % split the roi name into different elements
+    roiDetails = split(roiName, {'-','_'});
+
+    % find 
+    % - 'method' 
+    % - details about method (radius, area)
+    % - name of the area (label)
+    method = roiDetails{find(strcmp('method',roiDetails))+1};
+    label = roiDetails{find(strcmp('label',roiDetails))+1};
+    switch method
+        case 'sphere', detail = roiDetails{find(strcmp('radius',roiDetails))+1};
+        case 'atlas', detail = roiDetails{find(strcmp('atlas',roiDetails))+1};
+    end
+
+    % compose new name
+    switch method
+        case 'sphere', folderInfo = [detail, 'mm-sphere-', label];
+        case 'atlas', folderInfo = [detail, '-', label];
+    end   
+
+    outStr = folderInfo;
+    
 end
 
 

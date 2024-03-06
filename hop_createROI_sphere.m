@@ -48,14 +48,7 @@ function hop_createROI_sphere(opt, m)
 % Date: March 2024
 
 
-% Load reference image provided by method, to be used for resampling
-referenceImg = spm_vol(m.referencePath);
-referenceImg = referenceImg(1, 1);
-
-% Create a mars_space object for the reference image
-referenceSpace = mars_space(referenceImg);
-
-
+% Iterate for each radius requested
 for iRad = 1:length(m.radii)
 
     % Pick the current radius
@@ -64,15 +57,12 @@ for iRad = 1:length(m.radii)
     % Notify the user
     fprintf(['\nExtracting ROIs for ', num2str(radius),'mm radius\n']);
 
-    % If required, create output folder. In intersectGLMandROI there is a
-    % subfuction for this
-    % add information about method used and method-specific parameters
-    outPath = fullfile(opt.dir.output, ['method-', m.method '_radius-', num2str(radius)]);
-    if ~exist(outPath, 'dir')
-        mkdir(outPath)
-    end
+    % Create output folder and pass the radius as argument
+    outputFolder = createOutputFolder(opt, m, radius);
 
-    fprintf(['ROIs will be saved in: ''', outPath, '''\n']);
+    % Create a mars_space object for the reference image, and save a copy
+    % in the output folder
+    [referenceSpace, ~] = loadReference(opt, m, outputFolder);
 
 
     % Loop through each area specified for this method
@@ -81,13 +71,16 @@ for iRad = 1:length(m.radii)
     % - resample it on reference image from the corresponding space
     % - merge hemispheres if required 
     % - save all ROIs in the output folder
-    for iArea = 1:length(m.area)
+    for iRTC = 1:length(m.roisToCreate)
+
+        % Select current ROI to work on
+        currROI = m.roisToCreate(iRTC);
 
         % Notifiy user
-        fprintf(['\nSTEP: Processing ROI: ', m.area{iArea}, '\n']);
+        fprintf(['\nSTEP: Processing ROI: ', currROI.area, '\n']);
 
         % If both hemisphere coordinates have AT LEAST one NaN value, skip this ROI 
-        if any(isnan(m.coordsL(iArea))) && any(isnan(m.coordsR(iArea)))
+        if isempty(currROI.coordsL) && isempty(currROI.coordsR)
             
             % Throw a warning, there may be a problem in the options
             warning('Skipping this area: missing some coordinates. Check options to make sure everyhting is in order');
@@ -102,26 +95,24 @@ for iRad = 1:length(m.radii)
         for hemi = ['L', 'R']
 
             % Fetch the current hemisphere
-            coords = m.(strcat('coords', hemi));
+            coords = currROI.(strcat('coords', hemi));
 
             % If it's defined
-            if ~any(isnan(coords(iArea)))
+            if ~any(isnan(coords)) && ~isempty(coords)
 
                 % Notify the user
                 fprintf(['  STEP: Creating sphere ROI for ', hemi, ' hemisphere\n']);
 
                 % Create the sphere ROI
                 sphere_roi = maroi_sphere(struct('centre', coords, 'radius', radius, ...
-                                          'label', strcat('hemi-', hemi, '_label-', m.area{iArea}), ...
+                                          'label', strcat('hemi-', hemi, '_label-', currROI.area), ...
                                           'binarize', 1, 'roithresh', 0.5));
 
                 % Resample the ROI
                 resampledRoi = maroi_matrix(sphere_roi, referenceSpace);
 
                 % Check mat and sizes of the resampled ROI against the reference image
-                processedRoi = struct(resampledRoi);
-                assert(isequal(referenceImg.mat, processedRoi.mat), 'The "mat" of the two images is not the same.');
-                assert(isequal(referenceImg.dim, size(processedRoi.dat)), 'Sizes are not the same');
+                checkCorrespondance(referenceSpace, resampledRoi);
 
                 % Store the resampled ROI in the cell array
                 processedRoiList{end + 1} = resampledRoi;
@@ -131,11 +122,11 @@ for iRad = 1:length(m.radii)
         end
 
         % If required, merge the resampled ROIs
-        if m.mergeRois(iArea) && length(processedRoiList) > 1
+        if currROI.mergeRois && length(processedRoiList) > 1
             fprintf('STEP: Merging resampled ROIs\n');
         
             % Make empty array with same dim as refImg
-            mergedRoiMat = zeros(referenceImg.dim);
+            mergedRoiMat = zeros(referenceSpace.dim);
 
             % Loop through and merge remaining ROIs
             for iROI = 1:length(processedRoiList)
@@ -146,14 +137,13 @@ for iRad = 1:length(m.radii)
             end
                 
             % Make a new ROI with same affine and dimension of the refImg
-            mergedRoi = maroi_matrix(struct('dat', mergedRoiMat, 'mat', referenceImg.mat, 'label', ...
-                                    strcat('hemi-B_label-', m.area{iArea}), ...
+            mergedRoi = maroi_matrix(struct('dat', mergedRoiMat, 'mat', referenceImage.mat, 'label', ...
+                                    strcat('hemi-B_label-', m.area{iRTC}), ...
                                     'binarize', 1, 'roithresh', 0.5 ));
 
             fprintf('DONE: ROIs merged successfully!\n');
 
-            % Quick hack: modify 'hemi' to [B]ilateral, to be used in
-            % filename
+            % Quick hack: rename 'hemi' to [B]ilateral, to be used in filename
             hemi = 'B';
 
         else
@@ -163,15 +153,14 @@ for iRad = 1:length(m.radii)
         end
 
         % Verify that the final (merged, resampled) ROI and the reference image are in the same space
-        mergedRoiStruct = struct(mergedRoi);
-        assert(isequal(referenceImg.mat, mergedRoiStruct.mat), 'The "mat" of the two images is not the same.');
-        assert(isequal(referenceImg.dim, size(mergedRoiStruct.dat)), 'The "size" of the two images is not the same.');
-
+        checkCorrespondance(referenceSpace, mergedRoi);
+        
 
         % Save the merged ROI
         fprintf('STEP: Saving ROIs\n');
-        filename = fullfile(outPath, ['hemi-', hemi, '_space-', opt.space, ...
-                                      '_method-sphere_radius-10_label-', m.area{iArea}, '_desc-resampled-to-sub_binary_mask']);
+        filename = fullfile(outputFolder, ['hemi-', hemi, '_space-', opt.space, ...
+                                           '_method-', m.method, '_radius-', num2str(radius), ...
+                                           '_label-', currROI.area, '_desc-resampled_mask']);
 
         save_as_image(mergedRoi, [filename, '.nii']);
         saveroi(mergedRoi, [filename, '.mat']);

@@ -90,6 +90,11 @@ opt.saveROI = true;
 opt.saveInSubfolder = false; 
 
 
+% Checks on the methods
+
+opt.checks.availableAtlases = {'Brodmann', 'custom'};
+
+
 %% Template methods 
 % Feel free to modify / copy / delete the following methods to your needs,
 % adding all the parameters needed
@@ -99,15 +104,8 @@ opt.saveInSubfolder = false;
 roiMethods(1).method = 'sphere';
 
 % what radii should the sphere(s) have?
+% will do all the radii for all the ROI specified
 roiMethods(1).radii = [10, 8, 6];
-
-% which areas will we extract? 
-roiMethods(1).area = {'VWFA'};
-
-% from which coordinates? 
-% (if lateralized, omit controlateral coords using NaNs)
-roiMethods(1).coordsL = [-46 -56 -16];
-roiMethods(1).coordsR = [NaN NaN NaN];
 
 % for this method, we need a reference image (any beta.nii from any
 % subject's GLM). Which path should we follow? 
@@ -115,14 +113,29 @@ roiMethods(1).referencePath = fullfile(opt.dir.stats, ['sub-', opt.level.subject
                                        ['task-', opt.task,'_space-',opt.space,'_FWHM-', num2str(opt.fwhm),'_node-',opt.node], ...
                                        'beta_0001.nii');
 
-% Do you want the ROIs to be merged across hemispheres? 
-% Only available in the case you provide two valid coordinates sets for
-% left and right hemisphere. If not, won't merge regardless your choice
-roiMethods(1).mergeRois = 0;
+% Method-specific details for each ROI that you want to create
+methodDetails = [];
+
+% - which areas will we extract
+% - from which coordinates (if lateralized, leave controlateral empty)
+% - on which reference image will we resize the ROI created
+% - whether to merge the ROIs or to keep them separate
+methodDetails(1).area = 'VWFA';
+methodDetails(1).coordsL = [-46 -56 -16];
+methodDetails(1).coordsR = [];
+methodDetails(1).mergeRois = 0;
+
+
+% Add all the rois to a struct
+roiMethods(1).roisToCreate = methodDetails;
 
 
 %% Method #2 - Atlas: extraction of [area] from [atlas]
-% Assumes that the mask is correct, will trust you on this
+% avaialble atlases are:
+% - Broadmann
+% - visfatlas (coming soon)
+% - fedorenko (coming soon)
+
 roiMethods(2).method = 'atlas';
 
 % for this method, we need a reference image (any beta.nii from any
@@ -131,45 +144,71 @@ roiMethods(2).referencePath = fullfile(opt.dir.stats, ['sub-', opt.level.subject
                                        ['task-', opt.task,'_space-',opt.space,'_FWHM-', num2str(opt.fwhm),'_node-',opt.node], ...
                                        'beta_0001.nii');
 
+% Method-specific details for each ROI that you want to create
+methodDetails = [];
 
-% atlas and mask names are used to save the mask 
-% avaialble atlases are:
-% - Broadmann
-% - visfatlas (coming soon)
-% - fedorenko (coming soon)
-roiMethods(2).atlas = 'Brodmann';
-roiMethods(2).masks = {'DLPFC', 'LVC'};
-roiMethods(2).parcels = [9 46; 
-                         17 18];
+% - from which atlas we will extract the ROIs
+% - which areas will we extract
+% - from which parcels
+methodDetails(1).atlas = 'Brodmann';
+methodDetails(1).area = 'DLPFC';
+methodDetails(1).parcels = [9 46];
 
-% are you working on a personal / specific parcels? 
-% you can do it here, by 
-% - setting 'customAtlas' to 'TRUE' 
-% - selecting the specific path of your mask 
-roiMethods(2).customAtlas = 0;
-roiMethods(2).roiPath = 'masks/path-to-custom-parcel';
+methodDetails(2).atlas = 'Brodmann';
+methodDetails(2).area = 'LVC';
+methodDetails(2).parcels = [17 18];
+
+% are you working on personal / specific parcels? 
+% - you can set the atlas to 'custom' and skip parcels
+% - you can specify the path to your mask 
+methodDetails(3).atlas = 'custom';
+methodDetails(3).area = 'AREA';
+methodDetails(3).roiPath = 'masks/path-to-custom-parcel';
+
+
+% Add all the rois to a struct
+roiMethods(2).roisToCreate = methodDetails;
 
 
 %% Method #3 - Intersection between [contrast] and [roi]
 roiMethods(3).method = 'intersection';
 
 % on which subjects should we extract ROIs?
+% It can be a wildcard 'all', indicating that all subjects in the dataset 
+% should be processed
 roiMethods(3).subjects = {'006','007'}; 
 
-% which area will be extracted?
-roiMethods(3).area = 'area1';
-
-% details of the ROI
-roiMethods(3).roiPath = '../whatever';
-
-% Optional: t-map can be difend either by providing information to extract
-% the contrast, or by the exported .nii map
-roiMethods(3).tmapPath = '../whatever';
-roiMethods(3).task = 'task';
-roiMethods(3).contrast = 'contrast';
-
 % which min. number of voxel can we accept? 
-roiMethods(3).nbVoxel = 25;
+roiMethods(3).targetNbVoxels = 25;
+
+
+% Method-specific details for each ROI that you want to create
+methodDetails = [];
+
+% FFA - Faces > Objects
+methodDetails(1).area = 'FFA';
+methodDetails(1).roiPath = fullfile(opt.dir.output,'radius_10/ROI-FFA_radius-10_space-MNI_resampled-to-sub_binary.nii');
+methodDetails(1).tmapPath = [];
+methodDetails(1).task = 'loc1';
+methodDetails(1).contrast = 'Faces > Objects';
+
+% LOC - Objects > Scrambled
+methodDetails(2).area = 'LOC';
+methodDetails(2).roiPath = fullfile(opt.dir.output,'radius_10/ROI-LOC_radius-10_space-MNI_resampled-to-sub_binary.nii');
+methodDetails(2).tmapPath = [];
+methodDetails(2).task = 'loc1';
+methodDetails(2).contrast = 'Objects > Scrambled';
+
+% PPA - Scenes > Objects
+methodDetails(3).area = 'PPA';
+methodDetails(3).roiPath = fullfile(opt.dir.output,'radius_10/ROI-PPA_radius-10_space-MNI_resampled-to-sub_binary.nii');
+methodDetails(3).tmapPath = [];
+methodDetails(3).task = 'loc1';
+methodDetails(3).contrast = 'Scenes > Objects';
+
+
+% Add all the rois to a struct
+roiMethods(3).roisToCreate = methodDetails;
 
 
 %% Method #4 - Expansion around [area] in [contrast]
@@ -196,10 +235,20 @@ roiMethods(4).contrast = 'contrast';
 % Throw an error if something major is missing (paths, areas)
 % Add defaults if something minor is missing (subs, radii, voxels)
 
-% Sphere - all parameters should be present
-% Intersection - all parameters should be present
-% Expansion - all parameters should be present
-% Atlas - all parameters should be present and the atlas should be present
+% Sphere
+% - coords should be empty or triplets
+
+% Intersection
+
+% Expansion
+
+% Atlas
+% - atlas specified should be in a list or be 'custom'
+% if ~ismember(inputAtlas, supportedAtlases)
+%     error('MyComponent:incorrectType',...
+%           ['Atlas specified is not supported at the moment. Check the options\n' ...
+%           'Supported atlases: Brodmann, custom'])
+% end
 
 end
 
