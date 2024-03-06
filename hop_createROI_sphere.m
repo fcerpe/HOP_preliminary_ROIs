@@ -153,7 +153,7 @@ for iRad = 1:length(m.radii)
         end
 
         % Verify that the final (merged, resampled) ROI and the reference image are in the same space
-        checkCorrespondance(referenceSpace, mergedRoi);
+        checkCorrespondence(referenceSpace, mergedRoi);
         
 
         % Save the merged ROI

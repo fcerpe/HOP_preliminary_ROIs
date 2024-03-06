@@ -28,10 +28,10 @@ fprintf('STEP: Getting ATLAS data \n');
 newAtlasName = ['reference_atlas-', m.atlas, '.nii'];
 
 % If needed, gunzip NIfTI file 
-if strcmp(atlasExt, '.gz')
+if strcmp(atExt, '.gz')
 
     % Gunzip and overwrite path with new one
-    atlasPath = gunzip(atlasPath, optputFolder);
+    atlasPath = gunzip(atlasPath, outputFolder);
     atlasPath = atlasPath{1};
 
     % Get the filename without the .nii extension

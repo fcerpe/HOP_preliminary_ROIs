@@ -138,6 +138,12 @@ roiMethods(1).roisToCreate = methodDetails;
 
 roiMethods(2).method = 'atlas';
 
+% Specify from which atlas we will extract the ROIs
+% At the moment, one call of this method accomodates for only one atlas
+% If more atlases are needed, you can always create more methods
+% (set to 'custom' to skip checks and extractions)
+roiMethods(2).atlas = 'Brodmann';
+
 % for this method, we need a reference image (any beta.nii from any
 % subject's GLM). Which path should we follow? 
 roiMethods(2).referencePath = fullfile(opt.dir.stats, ['sub-', opt.level.subjects{1}], ...
@@ -147,21 +153,19 @@ roiMethods(2).referencePath = fullfile(opt.dir.stats, ['sub-', opt.level.subject
 % Method-specific details for each ROI that you want to create
 methodDetails = [];
 
-% - from which atlas we will extract the ROIs
 % - which areas will we extract
 % - from which parcels
-methodDetails(1).atlas = 'Brodmann';
 methodDetails(1).area = 'DLPFC';
 methodDetails(1).parcels = [9 46];
 
-methodDetails(2).atlas = 'Brodmann';
 methodDetails(2).area = 'LVC';
 methodDetails(2).parcels = [17 18];
 
 % are you working on personal / specific parcels? 
-% - you can set the atlas to 'custom' and skip parcels
-% - you can specify the path to your mask 
-methodDetails(3).atlas = 'custom';
+% - you can set the atlas to 'custom' 
+% - in the details, skip parcels and specify the path to your mask
+%   IMPORTANT: your mask should be a binary mask. To add another atlas, get
+%   in touch 
 methodDetails(3).area = 'AREA';
 methodDetails(3).roiPath = 'masks/path-to-custom-parcel';
 
@@ -249,6 +253,7 @@ roiMethods(4).contrast = 'contrast';
 %           ['Atlas specified is not supported at the moment. Check the options\n' ...
 %           'Supported atlases: Brodmann, custom'])
 % end
+% - if method is custom, delete 'parcels' and check for binary mask
 
 end
 

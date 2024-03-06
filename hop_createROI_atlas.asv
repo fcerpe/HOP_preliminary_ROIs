@@ -134,7 +134,6 @@ for iRTC = 1:length(m.roisToCreate)
 
 
     % Save resampled ROI
-    fprintf('STEP: Saving ROIs\n');
     filename = fullfile(outputFolder, ['space-', opt.space, ...
                                        '_method-', m.method, '_atlas-', m.atlas, ...
                                        '_label-', currROI.area, '_parcels-', parcelsString{1}, '_mask']);
@@ -142,13 +141,13 @@ for iRTC = 1:length(m.roisToCreate)
     save_as_image(resampledRoi, strcat(filename, '.nii'));
     saveroi(resampledRoi, strcat(filename, '.mat'));
 
-    fprintf('DONE: Resampled %s ROI saved as: %s\n', currROI.area, filename);
+    fprintf('DONE: Resampled %s ROI saved as: %s\n', currROI.area, outRoiPath);
 
     fprintf('Processing ROI %s: COMPLETED!\n\n',currROI.area);
             
 end
 
-% Save script
+%% Save script
 % Copy this script to the output folder for replicability
 % fileNameAndLocation = [mfilename('fullpath')];
 % [path, filename, ext] = fileparts(fileNameAndLocation);

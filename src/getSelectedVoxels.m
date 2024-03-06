@@ -1,4 +1,4 @@
-function getSelectedVoxels(roiArray)
+function getSelectedVoxels(roiArray, when)
 
 % Print the number of voxels in a ROI
 
@@ -15,7 +15,7 @@ numVox = length(roiArray(:));
 assert(isequal(numVoxOnes+numVoxNotOnes, numVox), 'The non-rebased ROI array is not binary.');
 
 % notify the user
-fprintf('INFO: selected voxels BEFORE rebasing: %s\n', num2str(numVoxOnes))
+fprintf('INFO: selected voxels ', when, ' rebasing: %s\n', num2str(numVoxOnes))
 
 
 end
