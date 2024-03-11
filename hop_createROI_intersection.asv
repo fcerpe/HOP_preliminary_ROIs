@@ -91,24 +91,24 @@ roisStruct(3).outFolder = 'radius_10+loc';
 for iSub = 1:length(m.subjects)
 
     % Get subject name
-    subName = m.subjects{iSub};
+    subName = ['sub-', m.subjects{iSub}];
     fprintf('\n###### Processing %s ######\n', subName);
 
     % Iterate for each area requested
     for iROI = 1:length(m.roisToCreate)
 
-        % Create output folder
-        % skip method details, they will be extracted from the ROI's filename
-        outputFolder = createOutputFolder(opt, m, [], subName);
-
         % Take the current ROI that is being extracted
         currROI = m.roisToCreate(iROI);
+
+        % Create output folder
+        % skip method details, they will be extracted from the ROI's filename
+        outputFolder = createOutputFolder(opt, m, currROI.maskPath, subName);
 
         % Notify the user
         fprintf('\n--- Processing ROI: %s -  %s ---\n', currROI.area, currROI.contrast);
 
-        % Load ROI image and extract volume data
-        [roiImg, roiStruct] = loadROIdata(currROI.roiPath);
+        % Load mask image and extract volume data
+        [maskImg, maskStruct] = loadMaskData(currROI.maskPath);
 
          % Get the subject's folder
         % Does not check for presence of the task, node, etc.
@@ -117,14 +117,14 @@ for iSub = 1:length(m.subjects)
                                 ['task-', opt.task,'_space-',opt.space,'_FWHM-', num2str(opt.fwhm),'_node-',opt.node]); 
 
         % Load SPM model 
-        [model, loadSuccess] = loadSPMmodel(subjectFolder); % Import the SPM model file
+        [model, loadSuccess] = loadSPMmodel(subjectFolder, subName, currROI.task); % Import the SPM model file
 
         % Skip this contrast / ROI if the SPM model fails to load
         if ~loadSuccess, continue 
         end
         
         % Load T constrast and apply threshold (voxel with p < .001)
-        [tConImg, tStruct] = loadTContrastImage(model, roisStruct(iROI).contrastName, GLMdir);
+        [tConImg, tStruct] = loadTContrastImage(model, currROI.contrast, subjectFolder);
         [thresholdedImage, finalPThresh] = calculateAndApplyThreshold(tConImg, model);
 
         % Check that ROI and t map dimensionality and space are the same
@@ -294,38 +294,38 @@ function contrastNameSimple = simplifyContrastName(contrastName)
 end
 
 % function hasTask = checkSubjectHasTask(subPath, taskName, subName)
-    % Checks if the specified subject directory contains files related to the specified task.
-    %
-    % Parameters:
-    %   subPath: The full path to the subject's directory.
-    %   taskName: The name of the task to check for.
-    %   subName: The name of the subject being checked.
-    %
-    % Returns:
-    %   hasTask: A boolean indicating whether the task is present for the subject.
-    %
-    % Example usage:
-    %   hasTask = checkSubjectHasTask('/path/to/subject/directory', 'task_name', 'subject_name');
-    %
-    % This function searches the subject's directory for files containing the task name,
-    % and provides a warning if the task is not found, suggesting the iteration should be skipped.
-
-    fprintf('Checking for task %s in subject %s directory...\n', taskName, subName);
-    
-    % Construct the full path and list files
-    files = dir(subPath);
-    fileNames = {files.name};
-    
-    % Check for the presence of the task name in any file names
-    hasTask = any(contains(fileNames, taskName));
-    
-    if ~hasTask
-        % If the task is not found, issue a warning
-        warning('Task %s not found for %s in %s. Skipping...', taskName, subName, subPath);
-    else
-        fprintf('Task %s found for subject %s.\n', taskName, subName);
-    end
-end
+%     % Checks if the specified subject directory contains files related to the specified task.
+%     %
+%     % Parameters:
+%     %   subPath: The full path to the subject's directory.
+%     %   taskName: The name of the task to check for.
+%     %   subName: The name of the subject being checked.
+%     %
+%     % Returns:
+%     %   hasTask: A boolean indicating whether the task is present for the subject.
+%     %
+%     % Example usage:
+%     %   hasTask = checkSubjectHasTask('/path/to/subject/directory', 'task_name', 'subject_name');
+%     %
+%     % This function searches the subject's directory for files containing the task name,
+%     % and provides a warning if the task is not found, suggesting the iteration should be skipped.
+% 
+%     fprintf('Checking for task %s in subject %s directory...\n', taskName, subName);
+%     
+%     % Construct the full path and list files
+%     files = dir(subPath);
+%     fileNames = {files.name};
+%     
+%     % Check for the presence of the task name in any file names
+%     hasTask = any(contains(fileNames, taskName));
+%     
+%     if ~hasTask
+%         % If the task is not found, issue a warning
+%         warning('Task %s not found for %s in %s. Skipping...', taskName, subName, subPath);
+%     else
+%         fprintf('Task %s found for subject %s.\n', taskName, subName);
+%     end
+% end
 
 function [tConImg, tStruct] = loadTContrastImage(model, contrastName, GLMdir)
     % Loads T contrast image voxel data for a given contrast name and GLM directory.
@@ -435,7 +435,7 @@ function [model, loadSuccess] = loadSPMmodel(GLMdir, subName, taskName)
     return;
 end
 
-function [roiImg, roiStruct] = loadROIdata(roiImgPath)
+function [roiImg, roiStruct] = loadMaskData(roiImgPath)
     % Loads the ROI image and its voxel data from a specified path.
     %
     % Parameters:

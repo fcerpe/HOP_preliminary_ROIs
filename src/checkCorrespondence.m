@@ -1,4 +1,4 @@
-function checkCorrespondence(reference, test)
+function checkCorrespondence(reference, test, flag)
 
 % HOPLAB function to check two different ROIs (one reference and one
 % created ad hoc).
@@ -13,8 +13,14 @@ if ~isstruct(test), test = struct(test);
 end
 
 % Assert equality
-assert(isequal(reference.mat, test.mat), 'The "mat" of the two images is not the same.');
-assert(isequal(reference.dim, size(test.dat)), 'The "size" of the two images is not the same.');
+% Quick hack to solve for particularity of 'intersection' method
+if strcmp(flag, 'intersection')
+    assert(isequal(reference.mat, test.mat), 'The affine matrix of the two images is not the same.');
+    assert(isequal(reference.dim, test.dim), 'The "size" of the two images is not the same.');
+else
+    assert(isequal(reference.mat, test.mat), 'The "mat" of the two images is not the same.');
+    assert(isequal(reference.dim, size(test.dat)), 'The "size" of the two images is not the same.');
+end
 
 
 end

@@ -1,7 +1,9 @@
 function outputFolder = createOutputFolder(opt, m, detail, subject)
 
-    % 04/03/2024 
-    % Only works for atlas
+    % 11/03/2024 
+    % Assumes that detail is proper input
+    % - sphere: radius (numeric)
+    % - intersection: ROI path (char)
 
     % Creates an output directory for a given subject and ROI if it doesn't already exist.
     %
@@ -28,7 +30,7 @@ function outputFolder = createOutputFolder(opt, m, detail, subject)
         case 'atlas'
             methodDetails = ['_atlas-', m.atlas];
         case 'intersection'
-            methodDetails = ['_joined-', extractIntersection(m)];
+            methodDetails = ['_joined-', extractIntersection(detail)];
         case 'expansion' 
             methodDetails = [];
     end
@@ -69,10 +71,10 @@ end
 % e.g. path = '/method-sphere_radius-10/' -> '10mm-sphere'
 %      path = '/method-atlas_atlas-Brodmann/..._ROI-DLPFC' -> 'Brodmann-DLPFC
 % other options TBD
-function outStr = extractIntersection(m)
+function outStr = extractIntersection(roiPath)
     
     % isolate roi name 
-    roiParts = split(m.roiPath, '/');
+    roiParts = split(roiPath, '/');
     roiName = roiParts{end}; 
 
     % split the roi name into different elements

@@ -190,26 +190,16 @@ roiMethods(3).targetNbVoxels = 25;
 methodDetails = [];
 
 % FFA - Faces > Objects
-methodDetails(1).area = 'FFA';
-methodDetails(1).roiPath = fullfile(opt.dir.output,'radius_10/ROI-FFA_radius-10_space-MNI_resampled-to-sub_binary.nii');
-methodDetails(1).tmapPath = [];
-methodDetails(1).task = 'loc1';
-methodDetails(1).contrast = 'Faces > Objects';
+methodDetails(1).area = 'VWFA';
+methodDetails(1).maskPath = fullfile(opt.dir.output,'method-sphere_radius-10/hemi-R_space-IXI549Space_method-sphere_radius-10_label-VWFA_desc-resampled_mask.nii');
+methodDetails(1).task = 'visualLocalizer';
+methodDetails(1).contrast = 'french_gt_scrambled';
 
 % LOC - Objects > Scrambled
 methodDetails(2).area = 'LOC';
-methodDetails(2).roiPath = fullfile(opt.dir.output,'radius_10/ROI-LOC_radius-10_space-MNI_resampled-to-sub_binary.nii');
-methodDetails(2).tmapPath = [];
-methodDetails(2).task = 'loc1';
-methodDetails(2).contrast = 'Objects > Scrambled';
-
-% PPA - Scenes > Objects
-methodDetails(3).area = 'PPA';
-methodDetails(3).roiPath = fullfile(opt.dir.output,'radius_10/ROI-PPA_radius-10_space-MNI_resampled-to-sub_binary.nii');
-methodDetails(3).tmapPath = [];
-methodDetails(3).task = 'loc1';
-methodDetails(3).contrast = 'Scenes > Objects';
-
+methodDetails(2).maskPath = fullfile(opt.dir.output,'method-sphere_radius-10/hemi-R_space-IXI549Space_method-sphere_radius-10_label-VWFA_desc-resampled_mask.nii');
+methodDetails(2).task = 'visualLocalizer';
+methodDetails(2).contrast = 'drawing_gt_scrambled';
 
 % Add all the rois to a struct
 roiMethods(3).roisToCreate = methodDetails;
