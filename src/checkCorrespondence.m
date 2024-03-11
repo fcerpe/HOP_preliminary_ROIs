@@ -1,4 +1,4 @@
-function checkCorrespondance(reference, test)
+function checkCorrespondence(reference, test)
 
 % HOPLAB function to check two different ROIs (one reference and one
 % created ad hoc).
@@ -6,13 +6,15 @@ function checkCorrespondance(reference, test)
 % - assert equal .mat and .dim
 % - returns error in case of irregularities
 
-% cast images as struct
-structReference = struct(reference);
-structTest = struct(test); 
+% If they're not already, cast images as struct
+if ~isstruct(reference), reference = struct(reference);
+end
+if ~isstruct(test), test = struct(test);
+end
 
 % Assert equality
-assert(isequal(structReference.mat, structTest.mat), 'The "mat" of the two images is not the same.');
-assert(isequal(structReference.dim, size(structTest.dat)), 'The "size" of the two images is not the same.');
+assert(isequal(reference.mat, test.mat), 'The "mat" of the two images is not the same.');
+assert(isequal(reference.dim, size(test.dat)), 'The "size" of the two images is not the same.');
 
 
 end

@@ -1,59 +1,99 @@
-function hop_createROI_intersection(opt, m)
-
-% FUNCTION TO CREATE ROIs FROM AN IMAGE (MASK, SPHERE, PARCEL) AND A CONTRAST ACTIVATION MAP
+% SCRIPT FOR CREATING REGION OF INTEREST (ROI) FILES FROM AN IMAGE (MASK, SPHERE, PARCEL) AND A CONTRAST ACTIVATION MAP
 %
-% This script extracts specific regions of interest (ROIs) from an existing 
-% ROI image and a statistical contrast activation map previously estimated 
-% in SPM. It applies a threshold to the contrast map, masks these voxels to
-% the image provided and ensures the final ROI contains a minimum number 
-% of voxels. 
-% In case the resulting ROI is lower than a specified size, it will relax 
-% the threshold until the desired size or a threshold of p < 0.05. 
-% Lastly, saves the ROI both in NIfTI and matlab formats.
+% This script is designed to create a new ROI file in NIfTI format (.nii) from an existing ROI image 
+% and a statistical contrast activation map previously estimated in SPM (Statistical Parametric Mapping). 
+% The script applies a threshold to the contrast map to identify significant voxels, uses the ROI image 
+% to mask these voxels to the region of interest, and ensures the final ROI contains a minimum number 
+% of voxels. If the resulting ROI has fewer than 25 voxels, the significance threshold is incrementally 
+% relaxed until the ROI contains at least 25 voxels or a maximum threshold of p < 0.05 is reached. 
+% The resulting ROI, representing the intersection of the original ROI and thresholded contrast map, 
+% is then saved for further analysis.
 %
-% The script takes the following parameters:
+% Parameters:
 %
-%     opt: general options about the folder and files of the project.
-%          information about specific paramters can be found in 'hop_opton'
+%   selectedSubjects: Specifies the subjects to be processed. It can be a wildcard '*' 
+%                     (indicating that all subjects in the dataset should be processed) or 
+%                     an array of specific subject numbers.
 %
-%     m: a struct that contains all the specific parameters of this method
-%           method: the name of the method requested (e.g. 'atlas')
-%           subjects: the list of subjects on which to perform the
-%                     extraction. The function expects a valid contrast to
-%                     be present (or specified)
-%           area: the name of the area that ill be extracted
-%           roiPath: the path of the ROI that will be used as mask
-%           tmapPath: the path(s) to the contrasted thresholds  
-%           task: the task used to find the SPM.mat file containing GLM anlaysis
-%           contrast: the name of the contrast to use to extract the
-%                     specific t-map
-%           targetNbVoxels: the desired minimum number of voxels of the ROI 
+%   directories: Defines paths for necessary directories, including the derivatives directory 
+%                for GLM results, the MarsBaR toolbox directory, and the directories for 
+%                storing original and new ROIs.
 %
+%   roisStruct: A structure array detailing each ROI to be processed. Each structure should include:
+%               - roiName: The name of the ROI.
+%               - roiImgPath: Full path to the ROI image file.
+%               - taskName: The name of the task associated with the contrast.
+%               - contrastName: The name of the contrast as specified in SPM when the contrast was 
+%                               estimated. This name must match exactly for the script to find and use 
+%                               the contrast map.
+%               - outFolder: Name of the folder where the resulting ROI will be saved.
 %
-% The script performs the following steps:
+%                 Example:
+%                     roisStruct(1).roiName = 'FFA';
+%                     roisStruct(1).roiImgPath = fullfile(roisRoot,'radius_10/ROI-FFA_radius-10_space-MNI_resampled-to-sub_binary.nii');
+%                     roisStruct(1).taskName = 'loc1';
+%                     roisStruct(1).contrastName = 'Faces > Objects';
+%                     roisStruct(1).outFolder = 'radius_10+loc';
 %
-%     - iterates over each subject
-%     - creates an output folder that specifies method and its details, if it does not already exist
-%     - loads the sepcified ROI
-%     - loads the specified SPM model and contrast
-%     - if necessary, resamples the ROIs to match the model space
-%     - until the minimum number of voxels is reached, overlap mask and
-%       thresholded contrast
-%     - binarizes the resulting ROI
-%     - saves the merged ROI as a NIfTI file in the output folder
-%     - copies the script file to the output folder for replicability.
+% Steps:
 %
+%   1. Preparation: The script initializes MarsBaR and SPM, and sets up the directories and ROIs specified.
 %
-% Dependencies: MarsBaR, SPM
+%   2. Subject and ROI Processing: For each specified subject (or all subjects if '*' is used), the script:
+%       - Checks for and creates necessary output directories.
+%       - Loads the specified ROI image.
+%       - Loads the T maps for the specified contrasts from the SPM model.
+%       - Ensures that the ROI and T map images match in dimension and space.
+%       - Applies the initial significance threshold to the contrast map, then masks these voxels with the ROI.
+%       - If necessary, adjusts the significance threshold to ensure the final ROI contains at least 25 voxels.
+%
+%   3. Saving Results: Saves the final ROI in both NIfTI (.nii) and MATLAB (.mat) formats in the specified output directory.
+%
+%   4. Replicability: Copies this script to the output directory to document the processing steps for future reference.
+%
+% Dependencies: This script requires MarsBaR and SPM to be installed and configured in the MATLAB path.
+%
+% NOTE: It is crucial that the 'contrastName' parameter match exactly the name used in SPM for the contrast estimation, 
+% as the script relies on this name to locate and load the appropriate contrast map for each task and subject.
+%
+% To find contrast names from an existing SPM file:
+%
+%   1. Load the SPM.mat file: The SPM.mat file contains the model and contrast definitions for a given analysis. 
+%      You can load this file into MATLAB using the command:
+%
+%      load('path/to/your/SPM.mat');
+%
+%      Replace 'path/to/your/SPM.mat' with the actual path to the SPM.mat file you wish to inspect.
+%
+%   2. Inspect the SPM structure: After loading the SPM.mat file, the variable 'SPM' will be available in your 
+%      MATLAB workspace. This structure contains all the information about your model and contrasts.
+%
+%   3. Access contrast names: The contrast names are stored within the SPM structure under SPM.xCon. To list 
+%      all contrast names, you can use the following command:
+%
+%      {SPM.xCon.name}
+%
+%      This command will return a cell array of strings, where each string is the name of a contrast defined 
+%      in your SPM analysis. These are the names you must use exactly in the 'contrastName' field of the 
+%      roisStruct when setting up your script parameters.
+%  
+%   4. Verify contrast indices: If you need to reference contrasts by their index as well as their name, you 
+%      can enumerate the contrasts and their names together using:
+% 
+%      for i = 1:length(SPM.xCon)
+%          fprintf('Contrast %d: %s\n', i, SPM.xCon(i).name);
+%      end
+%
+%      This loop will print each contrast's index and name.
+%
 %
 % Author: Andrea Costantino
 % Date: 7 July 2023
-%  
-% Edited by: Filippo Cerpelloni
-% Date: March 2024
 
+clc
+clear
 
-% Set parameters
+%% Set parameters
 % Define root directories for data, GLM results, MarsBaR toolbox, and ROI paths
 derivativesDir = '/data/projects/chess/data/BIDS/derivatives';
 GLMroot = fullfile(derivativesDir,'SPM_HPM6_GS1_FD_noHPF/GLM/');
@@ -61,10 +101,10 @@ marsabPath = fullfile(derivativesDir, 'marsbar');
 roisRoot = fullfile(marsabPath, 'rois-noloc');
 outRoot = fullfile(marsabPath, 'rois+loc');
 
-% Setting up ROIs
+%% Setting up ROIs
 % FFA - Faces > Objects
 roisStruct(1).roiName = 'FFA';
-roisStruct(1).roiImgPath = fullfile(opt.dir.output,'method-sphere_radius-10/ROI-FFA_radius-10_space-MNI_resampled-to-sub_binary.nii');
+roisStruct(1).roiImgPath = fullfile(roisRoot,'radius_10/ROI-FFA_radius-10_space-MNI_resampled-to-sub_binary.nii');
 roisStruct(1).taskName = 'loc1';
 roisStruct(1).contrastName = 'Faces > Objects';
 roisStruct(1).outFolder = 'radius_10+loc';
@@ -83,49 +123,52 @@ roisStruct(3).taskName = 'loc1';
 roisStruct(3).contrastName = 'Scenes > Objects';
 roisStruct(3).outFolder = 'radius_10+loc';
 
-% Find subjects folders
+%% Find subjects folders
 % Define the list of subjects to be processed; use '*' to select all subjects
 selectedSubjectsList = '*';
 
 % Get subjects folders from subjects list
 subPaths = findSubjectsFolders(GLMroot, selectedSubjectsList);
 
+%% Main loop
+% Start marsbar and load SPM model
+marsbar('on');
+spm('defaults', 'fmri');
 
 % Iterate over each subject
-for iSub = 1:length(m.subjects)
+for subRow = 1:length(subPaths)
 
     % Get subject name
-    subName = subPaths(iSub).name;
+    subName = subPaths(subRow).name;
     fprintf('\n###### Processing %s ######\n', subName);
 
-    % Iterate for each area requested
-    for iROI = 1:length(m.roisToCreate)
+    % Iterate over ROI
+    for roiNum = 1:length(roisStruct)
 
-        % Create output folder
-        % skip method details, they will be extracted from the ROI's filename
-        outputFolder = createOutputFolder(opt, m, [], subName);
+        % Create output directory if it doesn't exist
+        outDir = createOutputDir(outRoot, roisStruct(roiNum).outFolder, subName);
 
         % Check whether the selected subject has the selected task, otherwise skip
-        subPath = fullfile(subPaths(iSub).folder, subPaths(iSub).name); 
-        subHasTask = checkSubjectHasTask(subPath, roisStruct(iROI).taskName, subName); % Check if the selected task is present in the sub directory
+        subPath = fullfile(subPaths(subRow).folder, subPaths(subRow).name); % Build the dir to the subject's images
+        subHasTask = checkSubjectHasTask(subPath, roisStruct(roiNum).taskName, subName); % Check if the selected task is present in the sub directory
         if ~subHasTask % If the task name is not found in any of the filename in the subject's directory
             continue; % Skip the rest of the loop and move to the next iteration
         end
 
-        fprintf('\n--- Processing ROI: %s -  %s ---\n',roisStruct(iROI).roiName , roisStruct(iROI).contrastName);
+        fprintf('\n--- Processing ROI: %s -  %s ---\n',roisStruct(roiNum).roiName , roisStruct(roiNum).contrastName);
 
         % Load ROI img data
-        [roiImg, roiStruct] = loadROIImageData(roisStruct(iROI).roiImgPath);
+        [roiImg, roiStruct] = loadROIImageData(roisStruct(roiNum).roiImgPath);
 
         % Load SPM model file
-        GLMdir = fullfile(GLMroot, subName, roisStruct(iROI).taskName); % Get SPM folder for this subject and task
-        [model, loadSuccess] = loadSPMModel(GLMdir, subName, roisStruct(iROI).taskName); % Import the SPM model file
+        GLMdir = fullfile(GLMroot, subName, roisStruct(roiNum).taskName); % Get SPM folder for this subject and task
+        [model, loadSuccess] = loadSPMModel(GLMdir, subName, roisStruct(roiNum).taskName); % Import the SPM model file
         if ~loadSuccess % If the SPM model is not found
             continue; % Skip the rest of the loop and move to the next iteration
         end
         
         % Load T constrast and apply threshold (voxel with p < .001)
-        [tConImg, tStruct] = loadTContrastImage(model, roisStruct(iROI).contrastName, GLMdir);
+        [tConImg, tStruct] = loadTContrastImage(model, roisStruct(roiNum).contrastName, GLMdir);
         [thresholdedImage, finalPThresh] = calculateAndApplyThreshold(tConImg, model);
 
         % Check that ROI and t map dimensionality and space are the same
@@ -133,21 +176,16 @@ for iSub = 1:length(m.subjects)
         assert(isequal(roiStruct.dim, tStruct.dim), 'The size of the two images is not the same.');
 
         % Intersect thresholded T map and ROI image
-        finalRoi = createIntersectedROI(thresholdedImage, roiImg, tStruct, roisStruct(iROI).roiName, roisStruct(iROI).contrastName);
+        finalRoi = createIntersectedROI(thresholdedImage, roiImg, tStruct, roisStruct(roiNum).roiName, roisStruct(roiNum).contrastName);
 
         % Save the resulting ROI to files(s)
-        saveROI(finalRoi, roisStruct(iROI).roiImgPath, finalPThresh, roisStruct(iROI).taskName, roisStruct(iROI).contrastName, outputFolder);
+        saveROI(finalRoi, roisStruct(roiNum).roiImgPath, finalPThresh, roisStruct(roiNum).taskName, roisStruct(roiNum).contrastName, outDir);
     end
 
     % Save script
-    saveScriptForReplicability(outputFolder)
+    saveScriptForReplicability(outDir)
 
 end
-
-end 
-
-
-
 
 %% Helper functions
 function saveScriptForReplicability(outDir)
@@ -465,6 +503,38 @@ function [roiImg, roiStruct] = loadROIImageData(roiImgPath)
         fprintf('ROI data successfully loaded.\n');
     catch ME
         error('Failed to load ROI data: %s', ME.message);
+    end
+end
+
+function outDir = createOutputDir(outRoot, outFolder, subName)
+    % Creates an output directory for a given subject and ROI if it doesn't already exist.
+    %
+    % Parameters:
+    %   outRoot: The root directory under which all outputs are saved.
+    %   outFolder: The folder name specific to the ROI or processing step.
+    %   subName: The name of the subject being processed.
+    %
+    % Example usage:
+    %   createOutputDir('/path/to/output/root', 'roi_specific_folder', 'subject_name');
+    %
+    % This function constructs the output directory path, checks if it exists,
+    % and creates it if not, with logging at each step for clarity.
+
+    % Construct the full path to the output directory
+    outDir = fullfile(outRoot, outFolder, subName);
+    
+    % Check if the output directory already exists
+    if ~exist(outDir, 'dir')
+        fprintf('Creating output folder: %s\n', outDir);
+        % Attempt to create the directory
+        [mkdirSuccess, msg, msgID] = mkdir(outDir);
+        if mkdirSuccess
+            fprintf('Output folder created successfully: %s\n', outDir);
+        else
+            error('Failed to create output folder: %s\nMessage ID: %s\n%s', outDir, msgID, msg);
+        end
+    else
+        fprintf('Output folder already exists: %s. No action needed.\n', outDir);
     end
 end
 

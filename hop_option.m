@@ -243,6 +243,8 @@ roiMethods(4).contrast = 'contrast';
 % - coords should be empty or triplets
 
 % Intersection
+% - subjects: if empty use defaults, if all use all in glm, if specified
+%             use them
 
 % Expansion
 
