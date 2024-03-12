@@ -203,7 +203,7 @@ switch type
             % sufficient to extract an ROI. 
             % Re-iterate with a different threshold
             %
-            % (this scripting is dangerous, because it calls itself, use carefully)
+            % (this scripting is dangerous, because it calls itself. use carefully)
             mask = roi_createCustomExpansion(specification, VolumeDefiningImage, OutputDir, saveImg, attempt);
         end
 

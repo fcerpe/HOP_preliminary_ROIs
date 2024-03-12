@@ -113,7 +113,6 @@ end
 
 
 
-
 %% Helper functions
 % most of them moved to /src as standalone functions
 % kept those obsolete or not working
@@ -153,7 +152,6 @@ end
 %         warning('Failed to copy script to output folder: %s', ME.message);
 %     end
 % end
-
 
 % function hasTask = checkSubjectHasTask(subPath, taskName, subName)
 %     % Checks if the specified subject directory contains files related to the specified task.

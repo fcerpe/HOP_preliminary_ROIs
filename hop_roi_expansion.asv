@@ -183,17 +183,6 @@ function roi = expandOnTContrast(opt, m, currROI, tConImg)
 % 
 % 
 
-% load threshold
-% call expansion
-%   make sphere - check, etc
-%   return success (bool) and roi
-% if not success, iterate
-% if success, break
 
-
-% expansion:
-% make sphere
-% overlap as in intersection
-% get nbVox
 
 end
