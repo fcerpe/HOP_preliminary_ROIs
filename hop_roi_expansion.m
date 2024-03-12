@@ -86,17 +86,24 @@ for iSub = 1:length(m.subjects)
         % Subfunction to create expansion - not yet implemented
         % Will just show workflow for now, names may not match
         
-        % roi = expandOnTContrast(opt, m, currROI, tConImg);
-
+        % call subfunction to expand
+        %   get details about tmap (thersholds, map itself)
+        %   while not enough voxels and enough thresholds
+        %       apply threshold to tmap
+        %       call subfunction to expand around a tmap
+        %           get details about sphere (center, radius, stesp, maximum expansion)
+        %           while not enough voxels and enough space to expand
+        %               call subfunction to make sphere
+        %               call subfunction to intersect sphere and tmap
+        %               compare number of voxels
+        %               if ok, retrun success = true and roi
+        %           if not enough space, return success = false
+        %       if success, return roi
+        %       if not success, go to new threshold
+        %   if never success, throw error
         
         % Save the resulting ROI to files(s)
         % saveROI(roi, finalPThresh, currROI.task, currROI.contrast, outputFolder);
-
-
-
-        
-
-         
 
     end
 end
@@ -108,21 +115,6 @@ end
 
 % make expansion
 function roi = expandOnTContrast(opt, m, currROI, tConImg)
-
-% Get necessary information to create spheres and overlap them with tmap
-% center = currROI.coords;
-
-% Radius details
-% radius = 1;
-
-% determine step size (voxel size)
-% hdr = spm_vol(roiImage);
-% dim = diag(hdr.mat);
-% radiusStep = min(abs(dim(1:3)));
-
-% determine maximum raidus possible
-% radiusMax = hdr.dim .* dim(1:3)';
-% radiusMax = max(abs(radiusMax));
 
 % List all the possible threshold steps that we can use 
 % adjustmentPThreshs = [0.001, 0.01, 0.05];
@@ -139,61 +131,47 @@ function roi = expandOnTContrast(opt, m, currROI, tConImg)
     % [thresholdedImage, numCells] = applyThreshold(tConImg, finalasPThresh, erdf);
 
     % Call subfunction to work on one threshold
-    % overalp = 
-%     % Subfunction: actual expansion from a given thresholded image
-%     % Make sphere with the current radius
-%     % Create the sphere ROI
-%     mask = maroi_sphere(struct('centre', cetner, 'radius', radius, ...
-%                               'label', 'expansion', 'binarize', 1, 'roithresh', 0.5));
-%     
+    % [success, overlap] = expandOnThreshold(opt, m, currROI, thresholdedImage)
+
+
+
+% end
+
+
 %     % Notify the user
 %     fprintf(1, '\n radius: %0.2f mm; roi size: %i voxels', radius, currNbVoxels);
 % 
-%     % Check that everything is in order
-%     % - size is indeed expanding. If not, it means that the sphere has 
-%     %   engulfed the whole cluster of voxels 
-%     % - there are still voxels to include in the ROI. If not, it means that
-%     %   the threshold is too strict
-%     % - the radius is larger than the mask itself. If so, there are no more
-%     %   voxels in the brain
-%     if (mask.roi.size == previousSize) || (mask.roi.size > sphere.maxNbVoxels) || (mask.roi.radius > maxRadius)
-%         
-%         iThr = iThr + 1;
-%     end
-% 
-% 
-% 
-%     % Adjust threshold if necessary
-%     finalPThresh = adjustmentPThreshs(iThr);
-%     iThr = iThr + 1; % Move to the next threshold for adjustment
-% 
-% 
-% end
-% 
-% 
-% 
-% % until target is reached
-% 
-% 
-% 
-% % overlap
-% % look how many voxels
-% % ok? exit
-% % not ok? threshold is more relaxed and repeat
-% 
-% 
-
-% load threshold
-% call expansion
-%   make sphere - check, etc
-%   return success (bool) and roi
-% if not success, iterate
-% if success, break
 
 
-% expansion:
-% make sphere
-% overlap as in intersection
-% get nbVox
+
+end
+
+function [roi, success] = expandOnThreshold(opt, m , currROI, tConImg)
+
+% Get specifics of radius 
+% - maximum
+% - steps based on voxel size
+% - index
+
+% while (currNbVoxels < m.targetNbVoxels) && (mask.roi.radius <= maxRadius)
+
+    % Call subfunction to make a sphere
+    % mask = maroi_sphere(struct('centre', cetner, 'radius', radius, ...
+    %                            'label', 'expansion', 'binarize', 1, 'roithresh', 0.5));
+
+    % Call subfunction to intersect sphere and mask
+
+    % compare number of voxels with target
+
+    % Check that everything is in order
+    % - size is indeed expanding. If not, it means that the sphere has 
+    %   engulfed the whole cluster of voxels 
+    % - there are still voxels to include in the ROI. If not, it means that
+    %   the threshold is too strict
+    % - the radius is larger than the mask itself. If so, there are no more
+    %   voxels in the brain
+    % if (mask.roi.size == previousSize) || (mask.roi.size > sphere.maxNbVoxels) || (mask.roi.radius > maxRadius)   
+    %   iThr = iThr + 1;
+    % end
 
 end
