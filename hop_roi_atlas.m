@@ -1,4 +1,4 @@
-function hop_createROI_atlas(opt, m)
+function hop_roi_atlas(opt, m)
 
 % FUNCTION TO EXTRACT ROIS FROM A GIVEN ATLAS
 %
@@ -126,7 +126,7 @@ for iRTC = 1:length(m.roisToCreate)
     resampledRoi = maroi_matrix(marsRoi, referenceSpace);
 
     % Verify that the resampled ROI and the reference image are in the same space
-    checkCorrespondence(referenceSpace, resampledRoi);
+    checkCorrespondence(referenceSpace, resampledRoi, 'atlas');
 
     % Get and print number of selected voxels after rebasing ( == 1)
     resampledStruct = struct(resampledRoi);

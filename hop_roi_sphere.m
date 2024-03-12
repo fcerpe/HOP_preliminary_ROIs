@@ -1,4 +1,4 @@
-function hop_createROI_sphere(opt, m)
+function hop_roi_sphere(opt, m)
 
 % FUNCTION TO GENERATE SPHERICAL ROIS IN NIFTI FORMAT
 %
@@ -112,7 +112,7 @@ for iRad = 1:length(m.radii)
                 resampledRoi = maroi_matrix(sphere_roi, referenceSpace);
 
                 % Check mat and sizes of the resampled ROI against the reference image
-                checkCorrespondance(referenceSpace, resampledRoi);
+                checkCorrespondance(referenceSpace, resampledRoi, 'sphere');
 
                 % Store the resampled ROI in the cell array
                 processedRoiList{end + 1} = resampledRoi;
@@ -153,7 +153,7 @@ for iRad = 1:length(m.radii)
         end
 
         % Verify that the final (merged, resampled) ROI and the reference image are in the same space
-        checkCorrespondence(referenceSpace, mergedRoi);
+        checkCorrespondence(referenceSpace, mergedRoi, 'sphere');
         
 
         % Save the merged ROI

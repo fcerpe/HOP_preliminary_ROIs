@@ -32,7 +32,7 @@ function outputFolder = createOutputFolder(opt, m, detail, subject)
         case 'intersection'
             methodDetails = ['_joined-', extractIntersection(detail)];
         case 'expansion' 
-            methodDetails = [];
+            methodDetails = ['_expand-', num2str(m.targetNbVoxels)];
     end
 
     % Construct full path

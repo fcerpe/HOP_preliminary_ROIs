@@ -37,20 +37,20 @@ for iM = 3:numel(roiMethods)
 
         case 'sphere'
             % Create a sphere around specified coordinates
-            hop_createROI_sphere(opt, roiMethods(iM)); 
+            hop_roi_sphere(opt, roiMethods(iM)); 
 
         case 'atlas'
             % Take region from a specified area of an atlas
-            hop_createROI_atlas(opt, roiMethods(iM));
+            hop_roi_atlas(opt, roiMethods(iM));
 
         case 'intersection'
             % Intersect a spmT map with either a sphere or another mask
-            hop_createROI_intersection(opt, roiMethods(iM));
+            hop_roi_intersection(opt, roiMethods(iM));
 
         case 'expansion'
             % Expand a progressively large sphere from specified
             % coordinates and intersect it with a specified spmT map
-            hop_createROI_expansion(opt, roiMethods(iM));
+            hop_roi_expansion(opt, roiMethods(iM));
 
     end
 

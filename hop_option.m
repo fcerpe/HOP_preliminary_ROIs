@@ -208,19 +208,28 @@ roiMethods(3).roisToCreate = methodDetails;
 %% Method #4 - Expansion around [area] in [contrast]
 roiMethods(4).method = 'expansion';
 
+% on which subjects should we extract ROIs?
+% It can be a wildcard 'all', indicating that all subjects in the dataset 
+% should be processed
+roiMethods(4).subjects = {'006','007'}; 
+
 % How many voxels we want to reach?
-roiMethods(4).nbVoxel = 100;
+roiMethods(4).targetNbVoxels = 100;
 
-% Sphere
-roiMethods(4).area = {'area1'};
-roiMethods(4).coordsL = [0 0 0];
-roiMethods(4).coordsR = [0 0 0];
+% Method-specific details for each ROI that you want to create
+methodDetails = [];
 
-% T-map
-roiMethods(4).tmapPath = '../whatever';
-roiMethods(4).task = 'task';
-roiMethods(4).contrast = 'contrast';
+% Details of the expansion to create:
+% - name of the ROI to create
+% - peak coordinates to take as center of the sphere
+% - task and contrast to fetch the SPM model where the activation map is
+methodDetails(1).area = 'VWFA';
+methodDetails(1).coords = [-46 -56 -16];
+methodDetails(1).task = 'visualLocalizer';
+methodDetails(1).contrast = 'french_gt_scrambled';
 
+% Add all the rois to a struct
+roiMethods(4).roisToCreate = methodDetails;
 
 
 %% Preliminary checks
