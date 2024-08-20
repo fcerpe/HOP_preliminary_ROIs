@@ -27,7 +27,7 @@ bidspm;
 % Follows parameters defined by the user in 'hop_option()'.
 % Several methods and their specifics are stored in the struct 'roi_methods'
 
-for iM = 3:numel(roiMethods)
+for iM = 1:numel(roiMethods)
 
     % Notify the user
     fprintf(['\n\n Processing method #', num2str(iM), ' - ', roiMethods(iM).method, '\n\n']);
@@ -50,7 +50,7 @@ for iM = 3:numel(roiMethods)
         case 'expansion'
             % Expand a progressively large sphere from specified
             % coordinates and intersect it with a specified spmT map
-            hop_roi_expansion(opt, roiMethods(iM));
+            % hop_roi_expansion(opt, roiMethods(iM));
 
     end
 

@@ -133,16 +133,7 @@ function roi = expandOnTContrast(opt, m, currROI, tConImg)
     % Call subfunction to work on one threshold
     % [success, overlap] = expandOnThreshold(opt, m, currROI, thresholdedImage)
 
-
-
 % end
-
-
-%     % Notify the user
-%     fprintf(1, '\n radius: %0.2f mm; roi size: %i voxels', radius, currNbVoxels);
-% 
-
-
 
 end
 
